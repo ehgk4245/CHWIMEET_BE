@@ -134,7 +134,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
     /** AT claims로부터 인증 세팅 (authVersion 즉시성 체크 포함) */
     private void setAuthenticationFromClaims(Map<String, Object> claims) {
         long id = ((Number) claims.get("id")).longValue();
-        String username = (String) claims.get("username");
+        String email = (String) claims.get("email");
         String nickname = (String) claims.get("nickname");
 
         // authVersion 체크
@@ -151,7 +151,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                 new SimpleGrantedAuthority("ROLE_" + role.name())
         );
 
-        SecurityUser principal = new SecurityUser(id, username, "", nickname, authorities);
+        SecurityUser principal = new SecurityUser(id, email, "", nickname, authorities);
         Authentication auth = new UsernamePasswordAuthenticationToken(principal, "", authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }

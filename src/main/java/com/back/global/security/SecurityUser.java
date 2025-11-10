@@ -14,12 +14,12 @@ public class SecurityUser extends User {
 
     public SecurityUser(
             long id,
-            String username,
+            String email,
             String password,
             String nickname,
             Collection<? extends GrantedAuthority> authorities
     ) {
-        super(username, password, authorities);
+        super(email, password, authorities);
         this.id = id;
         this.nickname = nickname;
     }

@@ -16,12 +16,12 @@ public record RsData<T>(
     }
 
     public static <T> RsData<T> success(String msg, T data) {
-        return new RsData<>("S-1", msg, data);
+        return new RsData<>("200-1", msg, data);
     }
     public static <T> RsData<T> success(String msg) {
-        return new RsData<>("S-1", msg, null);
+        return new RsData<>("200-1", msg, null);
     }
     public static <T> RsData<T> fail(String msg) {
-        return new RsData<>("F-1", msg, null);
+        return new RsData<>("400-1", msg, null);
     }
 }
