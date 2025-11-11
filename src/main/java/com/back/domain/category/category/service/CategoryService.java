@@ -28,7 +28,7 @@ public class CategoryService {
 
     private CategoryResBody createCategoryWithParent(Long parentId, String categoryName) {
         Category parentCategory = categoryRepository.findById(parentId).orElseThrow(
-                () -> new ServiceException("404-1", "parentId에 해당하는 카테고리가 없습니다.")
+                () -> new ServiceException("404-1", "%d번 카테고리는 존재하지 않습니다.".formatted(parentId))
         );
 
         // Depth 검사: Depth 2까지만 허용
