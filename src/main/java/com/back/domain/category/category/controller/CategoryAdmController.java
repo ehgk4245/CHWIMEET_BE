@@ -28,4 +28,10 @@ public class CategoryAdmController {
         CategoryResBody categoryResBody = categoryService.updateCategory(categoryId, categoryUpdateReqBody);
         return RsData.success("카테고리 수정 성공", categoryResBody);
     }
+
+    @DeleteMapping("/{id}")
+    public RsData<Void> deleteCategory(@PathVariable("id") Long categoryId) {
+        categoryService.deleteCategory(categoryId);
+        return RsData.success("카테고리 삭제 성공");
+    }
 }

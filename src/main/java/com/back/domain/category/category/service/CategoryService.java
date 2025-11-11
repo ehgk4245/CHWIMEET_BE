@@ -7,6 +7,7 @@ import com.back.domain.category.category.entity.Category;
 import com.back.domain.category.category.repository.CategoryRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,5 +64,14 @@ public class CategoryService {
 
         category.setName(categoryUpdateReqBody.name());
         return CategoryResBody.of(category);
+    }
+
+    public void deleteCategory(Long categoryId) {
+        try {
+            categoryRepository.deleteById(categoryId);
+            categoryRepository.flush();
+        } catch (DataIntegrityViolationException e) { // DB FK 제약 조건 위반 시 발생에러, 데이터 베이스에 FK 설정 필요
+            throw new ServiceException("400-1", "%d번 카테고리를 참조 중인 게시글이 있습니다.".formatted(categoryId));
+        }
     }
 }
