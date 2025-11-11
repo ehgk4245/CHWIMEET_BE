@@ -21,10 +21,11 @@ public class PostController {
 
     private final PostService postService;
 
+    // 추후 RsData<PostDto>로 변경 예정
     @PostMapping
-    public ResponseEntity<RsData<Long>> createPost( // 추후 RsData<PostDto>로 변경 예정
-                                                    @Valid @RequestBody PostCreateReqBody reqBody,
-                                                    @AuthenticationPrincipal SecurityUser securityUser
+    public ResponseEntity<RsData<Long>> createPost(
+            @Valid @RequestBody PostCreateReqBody reqBody,
+            @AuthenticationPrincipal SecurityUser securityUser
     ) {
 
         Long memberId = securityUser.getId();
