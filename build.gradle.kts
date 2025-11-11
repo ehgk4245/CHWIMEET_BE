@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     java
     id("org.springframework.boot") version "3.5.6"
@@ -48,6 +50,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     // spring doc
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
+    // WebSocket
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 }
 
 tasks.withType<Test> {

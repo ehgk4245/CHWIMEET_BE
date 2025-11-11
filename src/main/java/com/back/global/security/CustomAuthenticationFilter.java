@@ -38,7 +38,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
     private static final Set<String> AUTH_WHITELIST = Set.of(
             "/api/v1/members/login",
             "/api/v1/members/logout",
-            "/api/v1/members/join",
+            "/api/v1/members",
             "/api/v1/members/check-nickname"
     );
 
