@@ -45,12 +45,15 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private Member author;
 
+    @Builder.Default // 빌더 사용시 기본값 null 방지
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostOption> options = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostImage> images = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostRegion> postRegions = new ArrayList<>();
 
