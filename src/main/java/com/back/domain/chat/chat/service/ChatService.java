@@ -9,11 +9,14 @@ import com.back.domain.member.member.service.MemberService;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.global.exception.ServiceException;
+import com.back.standard.util.page.PagePayload;
+import com.back.standard.util.page.PageUt;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -26,7 +29,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
 
     @Transactional
-    public CreateChatRoomResBody createChatRoom(Long postId, Long memberId) {
+    public CreateChatRoomResBody createOrGetChatRoom(Long postId, Long memberId) {
 
         Post post = postRepository.findById(postId).orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 게시글입니다."));
         Member host = post.getAuthor();
@@ -54,7 +57,9 @@ public class ChatService {
         return new CreateChatRoomResBody("채팅방이 생성되었습니다.", chatRoom.getId());
     }
 
-    public List<ChatRoomDto> getMyChatRooms(Long memberId) {
-        return chatRoomRepository.findByMemberId(memberId);
+    public PagePayload<ChatRoomDto> getMyChatRooms(Long memberId, Pageable pageable, String keyword) {
+        Page<ChatRoomDto> chatRooms = chatRoomRepository.findByMemberId(memberId, pageable, keyword);
+
+        return PageUt.of(chatRooms);
     }
 }

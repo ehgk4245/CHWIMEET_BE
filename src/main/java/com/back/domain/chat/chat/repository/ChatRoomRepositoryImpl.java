@@ -5,8 +5,12 @@ import com.back.domain.chat.chat.dto.OtherMemberDto;
 import com.back.domain.chat.chat.dto.PostDto;
 import com.back.domain.chat.chat.entity.QChatMember;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,11 +42,26 @@ public class ChatRoomRepositoryImpl implements ChatRoomRepositoryCustom {
     }
 
     @Override
-    public List<ChatRoomDto> findByMemberId(Long memberId) {
+    public Page<ChatRoomDto> findByMemberId(Long memberId, Pageable pageable, String keyword) {
         QChatMember me = new QChatMember("me");
         QChatMember other = new QChatMember("otherMember");
 
-        return queryFactory
+        // 공통 조건
+        BooleanExpression condition = me.member.id.eq(memberId)
+                .and(other.member.id.ne(memberId))
+                .and(createKeywordCondition(keyword));
+
+        Long total = queryFactory
+                .select(chatRoom.id.countDistinct())
+                .from(chatRoom)
+                .join(chatRoom.chatMembers, me)
+                .join(chatRoom.chatMembers, other)
+                .join(chatRoom.post, post)
+                .join(other.member, member)
+                .where(condition)
+                .fetchOne();
+
+        List<ChatRoomDto> content = queryFactory
                 .select(Projections.constructor(ChatRoomDto.class,
                         chatRoom.id,
                         chatRoom.createdAt,
@@ -60,11 +79,20 @@ public class ChatRoomRepositoryImpl implements ChatRoomRepositoryCustom {
                 .join(chatRoom.chatMembers, me)
                 .join(chatRoom.chatMembers, other)
                 .join(other.member, member)
-                .where(
-                        me.member.id.eq(memberId),
-                        other.member.id.ne(memberId)
-                )
-                .distinct()
+                .where(condition)
+                .orderBy(chatRoom.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
+    }
+
+    private BooleanExpression createKeywordCondition(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return post.title.containsIgnoreCase(keyword)
+                .or(member.nickname.containsIgnoreCase(keyword));
     }
 }
