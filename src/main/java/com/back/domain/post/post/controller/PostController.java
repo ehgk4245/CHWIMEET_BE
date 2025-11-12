@@ -76,7 +76,7 @@ public class PostController {
         return ResponseEntity.ok(body);
     }
 
-    @PostMapping("favorite/{postId}")
+    @PostMapping("favorites/{postId}")
     public ResponseEntity<String> toggleFavorite(
             @PathVariable Long postId,
             @AuthenticationPrincipal SecurityUser user) {
