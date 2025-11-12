@@ -35,7 +35,7 @@ public class AuthTokenService {
                 "email", member.getEmail(),
                 "nickname", member.getNickname(),
                 "authVersion", authVersion,
-                "roles", member.getRole()
+                "role", member.getRole()
         );
 
         return JwtUt.toString(jwtSecretKey, accessTokenExpireSeconds, claims);
