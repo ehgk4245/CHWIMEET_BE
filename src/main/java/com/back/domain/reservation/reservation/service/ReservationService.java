@@ -338,4 +338,28 @@ public class ReservationService {
                 totalAmount
         );
     }
+
+    public void updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ServiceException("404-1", "해당 예약을 찾을 수 없습니다."));
+
+        // 권한 체크: 해당 예약의 작성자(게스트) or 게시글의 작성자(호스트)만 가능
+        if (!reservation.getAuthor().getId().equals(memberId) &&
+                !reservation.getPost().getAuthor().getId().equals(memberId)) {
+            throw new ServiceException("403-1", "해당 예약의 상태를 변경할 권한이 없습니다.");
+        }
+
+        // TODO: 상태 전환 로직 추가
+        // ReqBody에서 null 인 값은 변경하지 않음 (status 빼고 다 nullable)
+
+
+        reservationRepository.save(reservation);
+        // TODO: 상태 전환 로그 저장
+
+    }
+
+    public Reservation getById(Long reservationId) {
+        return reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ServiceException("404-1", "해당 예약을 찾을 수 없습니다."));
+    }
 }
