@@ -3,8 +3,10 @@ package com.back.domain.reservation.reservation.dto;
 import com.back.domain.reservation.reservation.common.ReservationDeliveryMethod;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record CreateReservationReqBody(
         @NotNull
@@ -22,7 +24,10 @@ public record CreateReservationReqBody(
         LocalDate reservationStartAt,
         @NotNull
         @Future
-        LocalDate reservationEndAt
-        // TODO: 게시글 ID 추가 예정
+        LocalDate reservationEndAt,
+        @NotNull
+        Long postId,
+        @Size(max = 5)
+        List<Long> optionIds
 ) {
 }

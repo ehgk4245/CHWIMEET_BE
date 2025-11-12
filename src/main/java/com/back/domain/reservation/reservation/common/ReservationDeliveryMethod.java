@@ -1,6 +1,13 @@
 package com.back.domain.reservation.reservation.common;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum ReservationDeliveryMethod {
-    OFFLINE,
-    ONLINE
+    DIRECT("직거래"),
+    DELIVERY("택배");
+
+    private final String description;
 }

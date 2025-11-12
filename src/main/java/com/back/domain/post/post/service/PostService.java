@@ -11,6 +11,7 @@ import com.back.domain.post.post.dto.res.PostOptionResBody;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.PostImage;
 import com.back.domain.post.post.entity.PostOption;
+import com.back.domain.post.post.repository.PostOptionRepository;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
@@ -29,6 +30,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
+    private final PostOptionRepository postOptionRepository;
 
     // TODO: 추후 구현 필요
     // private final RegionRepository regionRepository;
@@ -48,6 +50,7 @@ public class PostService {
                 .deposit(reqBody.deposit())
                 .fee(reqBody.fee())
                 .author(author)
+                .isBanned(false)
                 .build();
 
         if (reqBody.options() != null && !reqBody.options().isEmpty()) {
@@ -174,5 +177,13 @@ public class PostService {
                 );
 
         return PageUt.of(postPage);
+    }
+
+    public Post getById(Long id) {
+        return postRepository.findById(id).orElseThrow(() -> new ServiceException("404-2", "존재하지 않는 게시글입니다."));
+    }
+
+    public List<PostOption> getAllOptionsById(List<Long> optionIds) {
+        return postOptionRepository.findAllById(optionIds);
     }
 }

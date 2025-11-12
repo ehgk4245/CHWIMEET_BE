@@ -6,10 +6,11 @@ import com.back.domain.reservation.reservation.entity.Reservation;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record GuestReservationSummaryResBody(
         Long reservationId,
-        // Post post,
+        ReservationPostSummaryDto post, // Post 요약 정보
         ReservationStatus status,
         ReservationDeliveryMethod receiveMethod,
         ReservationDeliveryMethod returnMethod,
@@ -19,13 +20,28 @@ public record GuestReservationSummaryResBody(
         LocalDate reservationEndAt,
         LocalDateTime createdAt,
         LocalDateTime modifiedAt,
-        // Option option,
-        int totalAmount
+        List<OptionDto> option, // 선택된 옵션 정보
+        int totalAmount // Service에서 계산된 최종 금액
 ) {
-    public GuestReservationSummaryResBody(Reservation reservation) {
+    // 💡 내부 DTO 1: 예약된 게시글 요약 정보
+    public record ReservationPostSummaryDto(
+            Long postId,
+            String title,
+            String thumbnailUrl,
+            AuthorDto author
+    ) {
+    }
+
+    public GuestReservationSummaryResBody(
+            Reservation reservation,
+            ReservationPostSummaryDto postSummary,
+            List<OptionDto> optionDtos,
+            int calculatedTotalAmount
+    ) {
+        // 4. 표준 생성자 호출 및 필드 매핑
         this(
                 reservation.getId(),
-                // TODO: post 필드 매핑
+                postSummary, // ⬅️ Service에서 준비된 DTO
                 reservation.getStatus(),
                 reservation.getReceiveMethod(),
                 reservation.getReturnMethod(),
@@ -35,9 +51,8 @@ public record GuestReservationSummaryResBody(
                 reservation.getReservationEndAt(),
                 reservation.getCreatedAt(),
                 reservation.getModifiedAt(),
-                // TODO: option 필드 매핑
-                // TODO: totalAmount 계산
-                0 // 임시 값, 실제 계산 로직으로 대체 필요
+                optionDtos, // ⬅️ Service에서 준비된 DTO 리스트
+                calculatedTotalAmount // ⬅️ Service에서 계산된 총액
         );
     }
 }

@@ -6,10 +6,11 @@ import com.back.domain.reservation.reservation.entity.Reservation;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record HostReservationSummaryResBody(
         Long reservationId,
-        // Long postId,
+        Long postId,
         ReservationStatus status,
         ReservationDeliveryMethod receiveMethod,
         ReservationDeliveryMethod returnMethod,
@@ -19,13 +20,13 @@ public record HostReservationSummaryResBody(
         LocalDate reservationEndAt,
         LocalDateTime createdAt,
         LocalDateTime modifiedAt,
-        // Option option,
+        List<OptionDto> option,
         int totalAmount
 ) {
-    public HostReservationSummaryResBody(Reservation reservation) {
+    public HostReservationSummaryResBody(Reservation reservation, List<OptionDto> optionDtos, int calculatedTotalAmount) {
         this(
                 reservation.getId(),
-                // TODO: postId 필드 매핑
+                reservation.getPost().getId(),
                 reservation.getStatus(),
                 reservation.getReceiveMethod(),
                 reservation.getReturnMethod(),
@@ -35,9 +36,8 @@ public record HostReservationSummaryResBody(
                 reservation.getReservationEndAt(),
                 reservation.getCreatedAt(),
                 reservation.getModifiedAt(),
-                // TODO: option 필드 매핑
-                // TODO: totalAmount 계산
-                0 // 임시 값, 실제 계산 로직으로 대체 필요
+                optionDtos,
+                calculatedTotalAmount
         );
     }
 }
