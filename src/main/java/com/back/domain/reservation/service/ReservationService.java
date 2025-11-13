@@ -205,7 +205,7 @@ public class ReservationService {
     }
 
     /**
-     * 예약 총 금액을 계산 (PostOption을 Lazy Loading하여 접근)
+     * 예약 총 금액을 계산
      */
     private int calculateTotalAmount(Reservation reservation, Post post, List<ReservationOption> options) {
         // 기간 일수 계산 (시작일과 종료일 포함)
@@ -270,7 +270,7 @@ public class ReservationService {
 
         Page<HostReservationSummaryResBody> reservationSummaryDtoPage = reservationPage.map(reservation -> {
 
-            List<ReservationOption> options = reservation.getReservationOptions(); // Lazy Loading 발생 가능
+            List<ReservationOption> options = reservation.getReservationOptions();
 
             // 총 금액 계산 (calculateTotalAmount 재사용)
             int totalAmount = calculateTotalAmount(reservation, post, options);
