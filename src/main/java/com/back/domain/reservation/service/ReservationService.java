@@ -37,7 +37,7 @@ public class ReservationService {
     private final ReservationLogRepository reservationLogRepository;
     private final PostService postService;
 
-    public Long create(CreateReservationReqBody reqBody, Member author) {
+    public ReservationDto create(CreateReservationReqBody reqBody, Member author) {
         Post post = postService.getById(reqBody.postId());
 
         // 기간 중복 체크
@@ -83,8 +83,8 @@ public class ReservationService {
             reservation.addAllOptions(reservationOptions);
         }
 
-        reservationRepository.save(reservation);
-        return reservation.getId();
+        Reservation r = reservationRepository.save(reservation);
+        return convertToReservationDto(r);
     }
 
     public long count() {
@@ -305,31 +305,10 @@ public class ReservationService {
             throw new ServiceException(HttpStatus.FORBIDDEN, "해당 예약에 대한 접근 권한이 없습니다.");
         }
 
-        Post post = reservation.getPost();
-        List<ReservationOption> options = reservation.getReservationOptions();
-
-        int totalAmount = calculateTotalAmount(reservation, post, options);
-
-        List<OptionDto> optionDtos = options.stream()
-                .map(ro -> new OptionDto(
-                        ro.getPostOption().getId(),
-                        ro.getPostOption().getName()
-                ))
-                .toList();
-
-        List<ReservationLogDto> logDtos = reservationLogRepository.findByReservation(reservation).stream()
-                .map(ReservationLogDto::new)
-                .toList();
-
-        return new ReservationDto(
-                reservation,
-                optionDtos,
-                logDtos,
-                totalAmount
-        );
+        return convertToReservationDto(reservation);
     }
 
-    public void updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
+    public ReservationDto updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
         Reservation reservation = reservationQueryRepository.findByIdWithPostAndAuthor(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
 
@@ -431,11 +410,13 @@ public class ReservationService {
             }
             default -> throw new ServiceException(HttpStatus.BAD_REQUEST, "지원하지 않는 상태 전환입니다.");
         }
-        reservationRepository.save(reservation);
+        Reservation r = reservationRepository.save(reservation);
 
         // 상태 전환 로그 저장
         ReservationLog log = new ReservationLog(reservation.getStatus(), reservation);
         reservationLogRepository.save(log);
+
+        return convertToReservationDto(r);
     }
 
     private void validateHostOnly(boolean isHost, String action) {
@@ -457,7 +438,7 @@ public class ReservationService {
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
     }
 
-    public void updateReservation(Long reservationId, Long memberId, UpdateReservationReqBody reqBody) {
+    public ReservationDto updateReservation(Long reservationId, Long memberId, UpdateReservationReqBody reqBody) {
         Reservation reservation = reservationQueryRepository.findByIdWithAll(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
 
@@ -499,7 +480,8 @@ public class ReservationService {
                 selectedOptions
         );
 
-        reservationRepository.save(reservation);
+        Reservation r = reservationRepository.save(reservation);
+        return convertToReservationDto(r);
     }
 
     // 배송 주소 입력 검증 메서드
@@ -516,5 +498,31 @@ public class ReservationService {
                 throw new ServiceException(HttpStatus.BAD_REQUEST, "직거래 방식에서는 주소를 입력할 수 없습니다.");
             }
         }
+    }
+
+    // 중복 제거: DTO 변환 로직을 별도 메서드로 추출
+    private ReservationDto convertToReservationDto(Reservation reservation) {
+        Post post = reservation.getPost();
+        List<ReservationOption> options = reservation.getReservationOptions();
+
+        int totalAmount = calculateTotalAmount(reservation, post, options);
+
+        List<OptionDto> optionDtos = options.stream()
+                .map(ro -> new OptionDto(
+                        ro.getPostOption().getId(),
+                        ro.getPostOption().getName()
+                ))
+                .toList();
+
+        List<ReservationLogDto> logDtos = reservationLogRepository.findByReservation(reservation).stream()
+                .map(ReservationLogDto::new)
+                .toList();
+
+        return new ReservationDto(
+                reservation,
+                optionDtos,
+                logDtos,
+                totalAmount
+        );
     }
 }
