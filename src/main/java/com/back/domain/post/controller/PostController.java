@@ -27,6 +27,7 @@ public class PostController implements PostApi {
 
     private final PostService postService;
 
+    @Override
     @PostMapping
     public ResponseEntity<String> createPost(
             @Valid @RequestBody PostCreateReqBody reqBody,
@@ -37,6 +38,7 @@ public class PostController implements PostApi {
         return ResponseEntity.status(HttpStatus.CREATED).body("게시글이 생성되었습니다");
     }
 
+    @Override
     @GetMapping
     public ResponseEntity<PagePayload<PostListResBody>> getPostList(
             @AuthenticationPrincipal SecurityUser user,
@@ -52,6 +54,7 @@ public class PostController implements PostApi {
         return ResponseEntity.ok(body);
     }
 
+    @Override
     @GetMapping("/{postId}")
     public ResponseEntity<PostDetailResBody> getPostById(
             @PathVariable Long postId,
@@ -60,6 +63,7 @@ public class PostController implements PostApi {
         return ResponseEntity.ok(body);
     }
 
+    @Override
     @GetMapping("/my")
     public ResponseEntity<PagePayload<PostListResBody>> getMyPostList(
             @AuthenticationPrincipal SecurityUser user,
@@ -71,6 +75,7 @@ public class PostController implements PostApi {
         return ResponseEntity.ok(body);
     }
 
+    @Override
     @PostMapping("/favorites/{postId}")
     public ResponseEntity<String> toggleFavorite(
             @PathVariable Long postId,
@@ -79,6 +84,7 @@ public class PostController implements PostApi {
         return ResponseEntity.ok(isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기가 해제되었습니다.");
     }
 
+    @Override
     @GetMapping("/favorites")
     public ResponseEntity<PagePayload<PostListResBody>> getFavoritePosts(
             @AuthenticationPrincipal SecurityUser user,
@@ -90,6 +96,7 @@ public class PostController implements PostApi {
         return ResponseEntity.ok(body);
     }
 
+    @Override
     @PutMapping("/{postId}")
     public ResponseEntity<String> updatePost(
             @PathVariable Long postId,
@@ -101,6 +108,7 @@ public class PostController implements PostApi {
         return ResponseEntity.ok("게시글이 수정되었습니다.");
     }
 
+    @Override
     @DeleteMapping("/{postId}")
     public ResponseEntity<String> deletePost(
             @PathVariable Long postId,

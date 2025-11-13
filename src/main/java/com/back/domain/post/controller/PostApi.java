@@ -1,18 +1,83 @@
 package com.back.domain.post.controller;
 
 import com.back.domain.post.dto.req.PostCreateReqBody;
+import com.back.domain.post.dto.req.PostUpdateReqBody;
+import com.back.domain.post.dto.res.PostDetailResBody;
+import com.back.domain.post.dto.res.PostListResBody;
 import com.back.global.security.SecurityUser;
+import com.back.standard.util.page.PagePayload;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Tag(name = "Post API", description = "게시글 기능 관련 API")
 public interface PostApi {
 
     @Operation(summary = "게시글 생성 API", description = "새로운 게시글을 생성합니다.")
-    ResponseEntity<String> createPost(@Valid @RequestBody PostCreateReqBody postCreateReqBody, @AuthenticationPrincipal SecurityUser securityUser);
+    ResponseEntity<String> createPost(@Valid @RequestBody PostCreateReqBody postCreateReqBody, @AuthenticationPrincipal SecurityUser user);
 
+    @Operation(summary = "게시글 목록 조회 API", description = "게시글 목록을 조회합니다.")
+    ResponseEntity<PagePayload<PostListResBody>> getPostList(
+            @AuthenticationPrincipal SecurityUser user,
+            @ParameterObject
+            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) List<Long> regionIds
+    );
+
+    @Operation(summary = "게시글 상세 조회 API", description = "특정 게시글의 상세 정보를 조회합니다.")
+    ResponseEntity<PostDetailResBody> getPostById(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal SecurityUser user
+    );
+
+    @Operation(summary = "내 게시글 목록 조회 API", description = "로그인한 사용자의 게시글 목록을 조회합니다.")
+    ResponseEntity<PagePayload<PostListResBody>> getMyPostList(
+            @AuthenticationPrincipal SecurityUser user,
+            @ParameterObject
+            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    );
+
+    @Operation(summary = "즐겨찾기 토글 API", description = "특정 게시글에 대해 즐겨찾기를 설정 및 해제합니다.")
+    ResponseEntity<String> toggleFavorite(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal SecurityUser user
+    );
+
+    @Operation(summary = "즐겨찾기 게시글 목록 조회 API", description = "로그인한 사용자의 즐겨찾기한 게시글 목록을 조회합니다.")
+    ResponseEntity<PagePayload<PostListResBody>> getFavoritePosts(
+            @AuthenticationPrincipal SecurityUser user,
+            @ParameterObject
+            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    );
+
+    @Operation(summary = "게시글 수정 API", description = "특정 게시글의 정보를 수정합니다.")
+    ResponseEntity<String> updatePost(
+            @PathVariable Long postId,
+            @Valid @RequestBody PostUpdateReqBody reqBody,
+            @AuthenticationPrincipal SecurityUser user
+    );
+
+    @Operation(summary = "게시글 삭제 API", description = "특정 게시글을 삭제합니다.")
+    ResponseEntity<String> deletePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal SecurityUser user
+    );
+
+    
 }
