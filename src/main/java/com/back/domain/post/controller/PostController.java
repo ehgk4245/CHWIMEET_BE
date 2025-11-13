@@ -101,4 +101,14 @@ public class PostController {
         return ResponseEntity.ok("게시글이 수정되었습니다.");
     }
 
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<String> deletePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        postService.deletePost(postId, user.getId());
+
+        return ResponseEntity.ok("게시글이 삭제되었습니다.");
+    }
+
 }

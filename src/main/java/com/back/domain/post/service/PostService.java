@@ -240,4 +240,14 @@ public class PostService {
         post.resetPostRegions(newPostRegions);
     }
 
+    public void deletePost(Long postId, long memberId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "존재하지 않는 게시글입니다."));
+
+        if (!post.getAuthor().getId().equals(memberId)) {
+            throw new ServiceException(HttpStatus.FORBIDDEN, "본인의 게시글만 삭제할 수 있습니다.");
+        }
+
+        postRepository.delete(post);
+    }
 }
