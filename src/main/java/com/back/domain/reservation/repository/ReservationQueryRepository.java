@@ -84,32 +84,12 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
     }
 
     @Override
-    public Page<Reservation> findByAuthorWithFetch(Member author, Pageable pageable) {
-        List<Reservation> content = selectFrom(reservation)
-                .leftJoin(reservation.post, post).fetchJoin()
-                .leftJoin(post.author, member).fetchJoin()
-                .leftJoin(post.images, postImage).fetchJoin()
-                .leftJoin(reservation.reservationOptions, reservationOption).fetchJoin()
-                .leftJoin(reservationOption.postOption, postOption).fetchJoin()
-                .where(reservation.author.eq(author))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(reservation.id.desc())
-                .fetch();
-
-        Long total = select(reservation.count())
-                .from(reservation)
-                .where(reservation.author.eq(author))
-                .fetchOne();
-
-        return new PageImpl<>(content, pageable, total);
-    }
-
-    @Override
-    public Page<Reservation> findByAuthorAndStatusWithFetch(
+    public Page<Reservation> findByAuthorWithFetch(
             Member author,
             ReservationStatus status,
+            String keyword,
             Pageable pageable) {
+
         List<Reservation> content = selectFrom(reservation)
                 .leftJoin(reservation.post, post).fetchJoin()
                 .leftJoin(post.author, member).fetchJoin()
@@ -118,7 +98,8 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
                 .leftJoin(reservationOption.postOption, postOption).fetchJoin()
                 .where(
                         reservation.author.eq(author),
-                        reservation.status.eq(status)
+                        statusEq(status),              // null이면 조건 무시
+                        postTitleContains(keyword)     // null이면 조건 무시
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -129,7 +110,8 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
                 .from(reservation)
                 .where(
                         reservation.author.eq(author),
-                        reservation.status.eq(status)
+                        statusEq(status),
+                        postTitleContains(keyword)
                 )
                 .fetchOne();
 
@@ -137,35 +119,17 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
     }
 
     @Override
-    public Page<Reservation> findByPostWithFetch(Post post, Pageable pageable) {
-        List<Reservation> content = selectFrom(reservation)
-                .leftJoin(reservation.reservationOptions, reservationOption).fetchJoin()
-                .leftJoin(reservationOption.postOption, postOption).fetchJoin()
-                .where(reservation.post.eq(post))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(reservation.id.desc())
-                .fetch();
-
-        Long total = select(reservation.count())
-                .from(reservation)
-                .where(reservation.post.eq(post))
-                .fetchOne();
-
-        return new PageImpl<>(content, pageable, total);
-    }
-
-    @Override
-    public Page<Reservation> findByPostAndStatusWithFetch(
+    public Page<Reservation> findByPostWithFetch(
             Post post,
             ReservationStatus status,
             Pageable pageable) {
+
         List<Reservation> content = selectFrom(reservation)
                 .leftJoin(reservation.reservationOptions, reservationOption).fetchJoin()
                 .leftJoin(reservationOption.postOption, postOption).fetchJoin()
                 .where(
                         reservation.post.eq(post),
-                        reservation.status.eq(status)
+                        statusEq(status)              // null이면 조건 무시
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -176,11 +140,23 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
                 .from(reservation)
                 .where(
                         reservation.post.eq(post),
-                        reservation.status.eq(status)
+                        statusEq(status)
                 )
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public Optional<Reservation> findByIdWithPostAndAuthor(Long id) {
+        Reservation result = selectFrom(reservation)
+                .leftJoin(reservation.post, post).fetchJoin()
+                .leftJoin(reservation.author, member).fetchJoin()
+                .leftJoin(post.author, member).fetchJoin()  // 호스트 정보도
+                .where(reservation.id.eq(id))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
     }
 
     // ===== 동적 조건 메서드 (Report 예시 스타일) =====
@@ -211,5 +187,15 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         }
         return reservation.reservationStartAt.lt(endAt)
                 .and(reservation.reservationEndAt.goe(startAt));
+    }
+
+    private BooleanExpression statusEq(ReservationStatus status) {
+        return status != null ? reservation.status.eq(status) : null;
+    }
+
+    private BooleanExpression postTitleContains(String keyword) {
+        return keyword != null && !keyword.isBlank()
+                ? reservation.post.title.containsIgnoreCase(keyword)
+                : null;
     }
 }

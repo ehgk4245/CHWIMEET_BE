@@ -21,18 +21,14 @@ public interface ReservationRepositoryCustom {
     boolean existsActiveReservation(Long postId, Long authorId);
 
     Optional<Reservation> findByIdWithOptions(Long id);
+    Optional<Reservation> findByIdWithPostAndAuthor(Long id);
 
-    Page<Reservation> findByAuthorWithFetch(Member author, Pageable pageable);
+    Page<Reservation> findByAuthorWithFetch(Member author,
+                                            ReservationStatus status,
+                                            String keyword,
+                                            Pageable pageable);
 
-    Page<Reservation> findByAuthorAndStatusWithFetch(
-            Member author,
-            ReservationStatus status,
-            Pageable pageable);
-
-    Page<Reservation> findByPostWithFetch(Post post, Pageable pageable);
-
-    public Page<Reservation> findByPostAndStatusWithFetch(
-            Post post,
-            ReservationStatus status,
-            Pageable pageable);
+    Page<Reservation> findByPostWithFetch(Post post,
+                                          ReservationStatus status,
+                                          Pageable pageable);
 }

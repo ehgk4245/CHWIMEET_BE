@@ -176,13 +176,7 @@ public class ReservationService {
             Pageable pageable,
             ReservationStatus status,
             String keyword) {
-
-        Page<Reservation> reservationPage;
-        if (status == null) {
-            reservationPage = reservationQueryRepository.findByAuthorWithFetch(author, pageable);
-        } else {
-            reservationPage = reservationQueryRepository.findByAuthorAndStatusWithFetch(author, status, pageable);
-        }
+        Page<Reservation> reservationPage = reservationQueryRepository.findByAuthorWithFetch(author, status, keyword, pageable);
 
         // 이제 Lazy Loading 없이 바로 접근 가능
         Page<GuestReservationSummaryResBody> reservationSummaryDtoPage = reservationPage.map(reservation -> {
@@ -272,13 +266,7 @@ public class ReservationService {
         if (!post.getAuthor().getId().equals(member.getId())) {
             throw new ServiceException(HttpStatus.FORBIDDEN, "해당 게시글의 호스트가 아닙니다.");
         }
-
-        Page<Reservation> reservationPage;
-        if (status == null) {
-            reservationPage = reservationQueryRepository.findByPostWithFetch(post, pageable);
-        } else {
-            reservationPage = reservationQueryRepository.findByPostAndStatusWithFetch(post, status, pageable);
-        }
+        Page<Reservation> reservationPage = reservationQueryRepository.findByPostWithFetch(post, status, pageable);
 
         Page<HostReservationSummaryResBody> reservationSummaryDtoPage = reservationPage.map(reservation -> {
 
@@ -307,7 +295,7 @@ public class ReservationService {
     }
 
     public ReservationDto getReservationDtoById(Long reservationId, Long memberId) {
-        Reservation reservation = reservationRepository.findById(reservationId)
+        Reservation reservation = reservationQueryRepository.findByIdWithOptions(reservationId)  // ✅ 수정
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
 
         // 권한 체크
@@ -319,10 +307,8 @@ public class ReservationService {
         Post post = reservation.getPost();
         List<ReservationOption> options = reservation.getReservationOptions();
 
-        // 총 금액 계산 및 데이터 준비 (Service 책임)
         int totalAmount = calculateTotalAmount(reservation, post, options);
 
-        // Option DTO 생성
         List<OptionDto> optionDtos = options.stream()
                 .map(ro -> new OptionDto(
                         ro.getPostOption().getId(),
@@ -330,7 +316,6 @@ public class ReservationService {
                 ))
                 .toList();
 
-        // ReservationLogDtoList 찾기
         List<ReservationLogDto> logDtos = reservationLogRepository.findByReservation(reservation).stream()
                 .map(ReservationLogDto::new)
                 .toList();
@@ -344,7 +329,7 @@ public class ReservationService {
     }
 
     public void updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
-        Reservation reservation = reservationRepository.findById(reservationId)
+        Reservation reservation = reservationQueryRepository.findByIdWithPostAndAuthor(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
 
         // 권한 체크
