@@ -1,8 +1,8 @@
 package com.back.domain.review.review.controller;
 
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.service.AuthTokenService;
-import com.back.domain.member.member.service.RefreshTokenStore;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.service.AuthTokenService;
+import com.back.domain.member.service.RefreshTokenStore;
 import com.back.domain.reservation.common.ReservationDeliveryMethod;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.entity.Reservation;

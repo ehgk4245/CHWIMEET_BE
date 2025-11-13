@@ -1,7 +1,7 @@
 package com.back.domain.post.post.entity;
 
 import com.back.domain.category.category.entity.Category;
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 import com.back.domain.post.post.common.ReceiveMethod;
 import com.back.domain.post.post.common.ReturnMethod;
 import com.back.global.jpa.entity.BaseEntity;

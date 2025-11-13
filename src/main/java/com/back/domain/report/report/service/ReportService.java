@@ -1,7 +1,7 @@
 package com.back.domain.report.report.service;
 
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.repository.MemberRepository;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.report.report.common.ReportType;
 import com.back.domain.report.report.common.validator.ReportValidator;
 import com.back.domain.report.report.dto.ReportReqBody;

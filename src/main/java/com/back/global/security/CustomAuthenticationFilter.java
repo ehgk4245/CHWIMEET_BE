@@ -1,10 +1,10 @@
 package com.back.global.security;
 
-import com.back.domain.member.member.common.MemberRole;
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.service.AuthTokenService;
-import com.back.domain.member.member.service.MemberService;
-import com.back.domain.member.member.service.RefreshTokenStore;
+import com.back.domain.member.common.MemberRole;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.service.AuthTokenService;
+import com.back.domain.member.service.MemberService;
+import com.back.domain.member.service.RefreshTokenStore;
 import com.back.global.exception.ServiceException;
 import com.back.global.web.CookieHelper;
 import jakarta.servlet.FilterChain;

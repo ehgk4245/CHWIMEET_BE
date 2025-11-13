@@ -1,6 +1,6 @@
-package com.back.domain.member.member.service;
+package com.back.domain.member.service;
 
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.json.JsonUt;
 import com.back.standard.util.jwt.JwtUt;

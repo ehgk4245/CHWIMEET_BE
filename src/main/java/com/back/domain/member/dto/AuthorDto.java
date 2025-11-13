@@ -1,6 +1,6 @@
-package com.back.domain.member.member.dto;
+package com.back.domain.member.dto;
 
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 import lombok.Builder;
 
 @Builder

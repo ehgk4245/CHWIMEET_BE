@@ -1,7 +1,7 @@
 package com.back.domain.reservation.controller;
 
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.service.MemberService;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.service.MemberService;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.dto.*;
 import com.back.domain.reservation.service.ReservationService;

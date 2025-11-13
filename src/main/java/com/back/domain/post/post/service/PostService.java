@@ -2,9 +2,9 @@ package com.back.domain.post.post.service;
 
 import com.back.domain.category.category.entity.Category;
 import com.back.domain.category.category.repository.CategoryRepository;
-import com.back.domain.member.member.dto.AuthorDto;
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.repository.MemberRepository;
+import com.back.domain.member.dto.AuthorDto;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.post.post.dto.req.PostCreateReqBody;
 import com.back.domain.post.post.dto.res.PostDetailResBody;
 import com.back.domain.post.post.dto.res.PostImageResBody;

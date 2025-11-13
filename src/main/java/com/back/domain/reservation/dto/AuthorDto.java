@@ -1,6 +1,6 @@
 package com.back.domain.reservation.dto;
 
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 
 public record AuthorDto(
         Long authorId,

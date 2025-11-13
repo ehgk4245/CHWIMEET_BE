@@ -1,9 +1,9 @@
-package com.back.domain.member.member.service;
+package com.back.domain.member.service;
 
-import com.back.domain.member.member.common.MemberRole;
-import com.back.domain.member.member.dto.MemberJoinReqBody;
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.repository.MemberRepository;
+import com.back.domain.member.common.MemberRole;
+import com.back.domain.member.dto.MemberJoinReqBody;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

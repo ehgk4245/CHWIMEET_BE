@@ -1,6 +1,6 @@
 package com.back.domain.post.post.dto.res;
 
-import com.back.domain.member.member.dto.AuthorDto;
+import com.back.domain.member.dto.AuthorDto;
 import com.back.domain.post.post.common.ReceiveMethod;
 import com.back.domain.post.post.common.ReturnMethod;
 import lombok.Builder;

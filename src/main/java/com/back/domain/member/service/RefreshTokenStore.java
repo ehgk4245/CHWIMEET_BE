@@ -1,4 +1,4 @@
-package com.back.domain.member.member.service;
+package com.back.domain.member.service;
 
 import com.back.standard.util.jwt.JwtUt;
 import jakarta.annotation.Nullable;

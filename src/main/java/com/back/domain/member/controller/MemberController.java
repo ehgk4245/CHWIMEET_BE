@@ -1,12 +1,12 @@
-package com.back.domain.member.member.controller;
+package com.back.domain.member.controller;
 
-import com.back.domain.member.member.dto.MemberDto;
-import com.back.domain.member.member.dto.MemberJoinReqBody;
-import com.back.domain.member.member.dto.MemberLoginReqBody;
-import com.back.domain.member.member.entity.Member;
-import com.back.domain.member.member.service.AuthTokenService;
-import com.back.domain.member.member.service.MemberService;
-import com.back.domain.member.member.service.RefreshTokenStore;
+import com.back.domain.member.dto.MemberDto;
+import com.back.domain.member.dto.MemberJoinReqBody;
+import com.back.domain.member.dto.MemberLoginReqBody;
+import com.back.domain.member.entity.Member;
+import com.back.domain.member.service.AuthTokenService;
+import com.back.domain.member.service.MemberService;
+import com.back.domain.member.service.RefreshTokenStore;
 import com.back.global.exception.ServiceException;
 import com.back.global.security.SecurityUser;
 import com.back.global.web.CookieHelper;

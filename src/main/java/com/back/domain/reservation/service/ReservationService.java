@@ -1,6 +1,6 @@
 package com.back.domain.reservation.service;
 
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 import com.back.domain.post.post.common.ReceiveMethod;
 import com.back.domain.post.post.common.ReturnMethod;
 import com.back.domain.post.post.entity.Post;

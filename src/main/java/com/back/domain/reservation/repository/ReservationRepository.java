@@ -1,6 +1,6 @@
 package com.back.domain.reservation.repository;
 
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.entity.Reservation;

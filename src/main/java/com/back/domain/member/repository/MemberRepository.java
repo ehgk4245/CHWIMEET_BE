@@ -1,6 +1,6 @@
-package com.back.domain.member.member.repository;
+package com.back.domain.member.repository;
 
-import com.back.domain.member.member.entity.Member;
+import com.back.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
