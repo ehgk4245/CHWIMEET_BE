@@ -1,9 +1,13 @@
 package com.back.domain.reservation.repository;
 
+import com.back.domain.member.member.entity.Member;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.entity.Reservation;
 import com.back.global.queryDsl.CustomQuerydslRepositorySupport;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -13,6 +17,9 @@ import java.util.Optional;
 import static com.back.domain.post.post.entity.QPostOption.postOption;
 import static com.back.domain.reservation.entity.QReservation.reservation;
 import static com.back.domain.reservation.entity.QReservationOption.reservationOption;
+import static com.back.domain.member.member.entity.QMember.member;
+import static com.back.domain.post.post.entity.QPost.post;
+import static com.back.domain.post.post.entity.QPostImage.postImage;
 
 @Repository
 public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
@@ -73,6 +80,59 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
                 .fetchOne();
 
         return Optional.ofNullable(result);
+    }
+
+    @Override
+    public Page<Reservation> findByAuthorWithFetch(Member author, Pageable pageable) {
+        List<Reservation> content = selectFrom(reservation)
+                .leftJoin(reservation.post, post).fetchJoin()
+                .leftJoin(post.author, member).fetchJoin()
+                .leftJoin(post.images, postImage).fetchJoin()
+                .leftJoin(reservation.reservationOptions, reservationOption).fetchJoin()
+                .leftJoin(reservationOption.postOption, postOption).fetchJoin()
+                .where(reservation.author.eq(author))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(reservation.id.desc())
+                .fetch();
+
+        Long total = select(reservation.count())
+                .from(reservation)
+                .where(reservation.author.eq(author))
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public Page<Reservation> findByAuthorAndStatusWithFetch(
+            Member author,
+            ReservationStatus status,
+            Pageable pageable) {
+        List<Reservation> content = selectFrom(reservation)
+                .leftJoin(reservation.post, post).fetchJoin()
+                .leftJoin(post.author, member).fetchJoin()
+                .leftJoin(post.images, postImage).fetchJoin()
+                .leftJoin(reservation.reservationOptions, reservationOption).fetchJoin()
+                .leftJoin(reservationOption.postOption, postOption).fetchJoin()
+                .where(
+                        reservation.author.eq(author),
+                        reservation.status.eq(status)
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(reservation.id.desc())
+                .fetch();
+
+        Long total = select(reservation.count())
+                .from(reservation)
+                .where(
+                        reservation.author.eq(author),
+                        reservation.status.eq(status)
+                )
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total);
     }
 
     // ===== 동적 조건 메서드 (Report 예시 스타일) =====
