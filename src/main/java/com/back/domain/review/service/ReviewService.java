@@ -31,7 +31,8 @@ public class ReviewService {
         if (!reservation.getAuthor().getId().equals(authorId)) {
             throw new ServiceException(HttpStatus.FORBIDDEN, "리뷰를 작성할 권한이 없습니다.");
         }
-        if (reservation.getReview() != null) {
+        boolean exists = reviewRepository.existsByReservationId(reservationId);
+        if (exists) {
             throw new ServiceException(HttpStatus.CONFLICT, "이미 작성된 리뷰가 있습니다.");
         }
         // TODO: 예약 단계를 만들어서 반납 완료 상태 이후인지 파악 필요.
