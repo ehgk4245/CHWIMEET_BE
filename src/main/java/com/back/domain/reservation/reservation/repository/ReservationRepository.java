@@ -1,7 +1,7 @@
 package com.back.domain.reservation.reservation.repository;
 
 import com.back.domain.member.member.entity.Member;
-import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.entity.Post;
 import com.back.domain.reservation.reservation.common.ReservationStatus;
 import com.back.domain.reservation.reservation.entity.Reservation;
 import org.springframework.data.domain.Page;

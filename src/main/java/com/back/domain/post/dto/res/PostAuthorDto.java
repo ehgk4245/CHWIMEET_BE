@@ -1,4 +1,4 @@
-package com.back.domain.post.post.dto.res;
+package com.back.domain.post.dto.res;
 
 import com.back.domain.member.member.entity.Member;
 import lombok.Builder;

@@ -1,15 +1,15 @@
-package com.back.domain.post.post.service;
+package com.back.domain.post.service;
 
 import com.back.domain.category.category.entity.Category;
 import com.back.domain.category.category.repository.CategoryRepository;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
-import com.back.domain.post.post.dto.req.PostCreateReqBody;
-import com.back.domain.post.post.dto.res.*;
-import com.back.domain.post.post.entity.*;
-import com.back.domain.post.post.repository.PostFavoriteRepository;
-import com.back.domain.post.post.repository.PostOptionRepository;
-import com.back.domain.post.post.repository.PostRepository;
+import com.back.domain.post.dto.req.PostCreateReqBody;
+import com.back.domain.post.dto.res.*;
+import com.back.domain.post.entity.*;
+import com.back.domain.post.repository.PostFavoriteRepository;
+import com.back.domain.post.repository.PostOptionRepository;
+import com.back.domain.post.repository.PostRepository;
 import com.back.domain.region.region.entity.Region;
 import com.back.domain.region.region.repository.RegionRepository;
 import com.back.global.exception.ServiceException;

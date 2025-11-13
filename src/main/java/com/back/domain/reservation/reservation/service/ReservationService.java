@@ -1,11 +1,11 @@
 package com.back.domain.reservation.reservation.service;
 
 import com.back.domain.member.member.entity.Member;
-import com.back.domain.post.post.common.ReceiveMethod;
-import com.back.domain.post.post.common.ReturnMethod;
-import com.back.domain.post.post.entity.Post;
-import com.back.domain.post.post.entity.PostOption;
-import com.back.domain.post.post.service.PostService;
+import com.back.domain.post.common.ReceiveMethod;
+import com.back.domain.post.common.ReturnMethod;
+import com.back.domain.post.entity.Post;
+import com.back.domain.post.entity.PostOption;
+import com.back.domain.post.service.PostService;
 import com.back.domain.reservation.reservation.common.ReservationDeliveryMethod;
 import com.back.domain.reservation.reservation.common.ReservationStatus;
 import com.back.domain.reservation.reservation.dto.*;

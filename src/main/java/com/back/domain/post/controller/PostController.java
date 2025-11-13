@@ -1,9 +1,9 @@
-package com.back.domain.post.post.controller;
+package com.back.domain.post.controller;
 
-import com.back.domain.post.post.dto.req.PostCreateReqBody;
-import com.back.domain.post.post.dto.res.PostDetailResBody;
-import com.back.domain.post.post.dto.res.PostListResBody;
-import com.back.domain.post.post.service.PostService;
+import com.back.domain.post.dto.req.PostCreateReqBody;
+import com.back.domain.post.dto.res.PostDetailResBody;
+import com.back.domain.post.dto.res.PostListResBody;
+import com.back.domain.post.service.PostService;
 import com.back.global.security.SecurityUser;
 import com.back.standard.util.page.PagePayload;
 import jakarta.validation.Valid;

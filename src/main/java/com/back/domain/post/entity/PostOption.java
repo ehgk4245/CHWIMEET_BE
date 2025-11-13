@@ -1,6 +1,5 @@
-package com.back.domain.post.post.entity;
+package com.back.domain.post.entity;
 
-import com.back.domain.member.member.entity.Member;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,13 +15,15 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostFavorite extends BaseEntity {
+public class PostOption extends BaseEntity {
+
+    private String name;
+
+    private Integer deposit;
+
+    private Integer fee;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
 }

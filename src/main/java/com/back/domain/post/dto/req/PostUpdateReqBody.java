@@ -1,7 +1,7 @@
-package com.back.domain.post.post.dto.req;
+package com.back.domain.post.dto.req;
 
-import com.back.domain.post.post.common.ReceiveMethod;
-import com.back.domain.post.post.common.ReturnMethod;
+import com.back.domain.post.common.ReceiveMethod;
+import com.back.domain.post.common.ReturnMethod;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +11,7 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record PostCreateReqBody(
+public record PostUpdateReqBody(
 
         @NotBlank(message = "제목을 입력하세요.")
         String title,

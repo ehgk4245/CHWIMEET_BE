@@ -1,7 +1,7 @@
 package com.back.domain.chat.chat.entity;
 
 import com.back.domain.member.member.entity.Member;
-import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.entity.Post;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

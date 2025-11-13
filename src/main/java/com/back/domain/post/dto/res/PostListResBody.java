@@ -1,7 +1,7 @@
-package com.back.domain.post.post.dto.res;
+package com.back.domain.post.dto.res;
 
-import com.back.domain.post.post.common.ReceiveMethod;
-import com.back.domain.post.post.common.ReturnMethod;
+import com.back.domain.post.common.ReceiveMethod;
+import com.back.domain.post.common.ReturnMethod;
 import lombok.Builder;
 
 import java.time.LocalDateTime;

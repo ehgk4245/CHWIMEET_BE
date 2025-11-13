@@ -1,4 +1,4 @@
-package com.back.domain.post.post.entity;
+package com.back.domain.post.entity;
 
 import com.back.domain.region.region.entity.Region;
 import com.back.global.jpa.entity.BaseEntity;

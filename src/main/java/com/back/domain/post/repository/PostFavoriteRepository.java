@@ -1,6 +1,6 @@
-package com.back.domain.post.post.repository;
+package com.back.domain.post.repository;
 
-import com.back.domain.post.post.entity.PostFavorite;
+import com.back.domain.post.entity.PostFavorite;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
