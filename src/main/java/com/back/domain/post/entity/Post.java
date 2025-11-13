@@ -1,6 +1,6 @@
 package com.back.domain.post.entity;
 
-import com.back.domain.category.category.entity.Category;
+import com.back.domain.category.entity.Category;
 import com.back.domain.member.entity.Member;
 import com.back.domain.post.common.ReceiveMethod;
 import com.back.domain.post.common.ReturnMethod;

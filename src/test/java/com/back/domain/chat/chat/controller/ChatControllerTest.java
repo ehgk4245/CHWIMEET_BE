@@ -1,7 +1,7 @@
 package com.back.domain.chat.chat.controller;
 
-import com.back.domain.category.category.entity.Category;
-import com.back.domain.category.category.repository.CategoryRepository;
+import com.back.domain.category.entity.Category;
+import com.back.domain.category.repository.CategoryRepository;
 import com.back.domain.chat.chat.dto.CreateChatRoomReqBody;
 import com.back.domain.chat.chat.repository.ChatRoomRepository;
 import com.back.domain.chat.chat.service.ChatService;
@@ -132,10 +132,9 @@ class ChatControllerTest {
         );
 
         // 게시글 생성
-        Category category = categoryRepository.save(Category.builder()
-                .name("노트북")
-                .parent(null)
-                .build());
+        Category category = categoryRepository.save(
+                Category.create("노트북", null)
+        );
 
         post1 = postRepository.save(Post.of(
                 "캠핑 텐트 대여",

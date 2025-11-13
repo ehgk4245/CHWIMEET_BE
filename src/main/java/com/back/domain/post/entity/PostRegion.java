@@ -1,6 +1,6 @@
 package com.back.domain.post.entity;
 
-import com.back.domain.region.region.entity.Region;
+import com.back.domain.region.entity.Region;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
