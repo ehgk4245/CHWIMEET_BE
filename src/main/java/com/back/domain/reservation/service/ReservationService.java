@@ -1,4 +1,4 @@
-package com.back.domain.reservation.reservation.service;
+package com.back.domain.reservation.service;
 
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.post.post.common.ReceiveMethod;
@@ -6,14 +6,15 @@ import com.back.domain.post.post.common.ReturnMethod;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.PostOption;
 import com.back.domain.post.post.service.PostService;
-import com.back.domain.reservation.reservation.common.ReservationDeliveryMethod;
-import com.back.domain.reservation.reservation.common.ReservationStatus;
-import com.back.domain.reservation.reservation.dto.*;
-import com.back.domain.reservation.reservation.entity.Reservation;
-import com.back.domain.reservation.reservation.entity.ReservationLog;
-import com.back.domain.reservation.reservation.entity.ReservationOption;
-import com.back.domain.reservation.reservation.repository.ReservationLogRepository;
-import com.back.domain.reservation.reservation.repository.ReservationRepository;
+import com.back.domain.reservation.common.ReservationDeliveryMethod;
+import com.back.domain.reservation.common.ReservationStatus;
+import com.back.domain.reservation.dto.*;
+import com.back.domain.reservation.entity.Reservation;
+import com.back.domain.reservation.entity.ReservationLog;
+import com.back.domain.reservation.entity.ReservationOption;
+import com.back.domain.reservation.repository.ReservationLogRepository;
+import com.back.domain.reservation.repository.ReservationQueryRepository;
+import com.back.domain.reservation.repository.ReservationRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationService {
     private final ReservationRepository reservationRepository;
+    private final ReservationQueryRepository reservationQueryRepository;
     private final ReservationLogRepository reservationLogRepository;
     private final PostService postService;
 
@@ -58,26 +60,22 @@ public class ReservationService {
         List<PostOption> selectedOptions = getOptionsByIds(post.getId(), reqBody.optionIds());
 
         // Reservation 엔티티 빌드
-        Reservation reservation = Reservation.builder()
-                .status(ReservationStatus.PENDING_APPROVAL)
-                .receiveMethod(reqBody.receiveMethod())
-                .receiveAddress1(reqBody.receiveAddress1())
-                .receiveAddress2(reqBody.receiveAddress2())
-                .returnMethod(reqBody.returnMethod())
-                .reservationStartAt(reqBody.reservationStartAt())
-                .reservationEndAt(reqBody.reservationEndAt())
-                .author(author)
-                .post(post)
-                .build();
+        Reservation reservation = new Reservation(
+                ReservationStatus.PENDING_APPROVAL,
+                reqBody.receiveMethod(),
+                reqBody.receiveAddress1(),
+                reqBody.receiveAddress2(),
+                reqBody.returnMethod(),
+                reqBody.reservationStartAt(),
+                reqBody.reservationEndAt(),
+                author,
+                post
+        );
 
         // reservationOption 리스트 생성 및 설정
         if (!selectedOptions.isEmpty()) {
             List<ReservationOption> reservationOptions = selectedOptions.stream()
-                    .map(postOption -> ReservationOption.builder()
-                            // reservation 필드는 일단 null로 두고, 이후 setter로 설정
-                            .postOption(postOption)
-                            .reservation(reservation)
-                            .build())
+                    .map(postOption -> new ReservationOption(reservation, postOption))
                     .toList();
 
             // Reservation의 리스트 필드에 추가 (addAllOptions 사용)
@@ -94,9 +92,9 @@ public class ReservationService {
 
     // 기간 중복 체크
     private void validateNoOverlappingReservation(Long postId, LocalDate start, LocalDate end, Long excludeId) {
-        boolean hasOverlap = (excludeId == null)
-                ? reservationRepository.existsOverlappingReservation(postId, start, end)
-                : reservationRepository.existsOverlappingReservationExcludingSelf(postId, start, end, excludeId);
+        boolean hasOverlap = reservationQueryRepository.existsOverlappingReservation(
+                postId, start, end, excludeId
+        );
 
         if (hasOverlap) {
             throw new ServiceException("400-1", "해당 기간에 이미 예약이 있습니다.");
@@ -105,7 +103,7 @@ public class ReservationService {
 
     // 같은 게스트의 중복 예약 체크
     private void validateNoDuplicateReservation(Long postId, Long authorId) {
-        boolean exists = reservationRepository.existsActiveReservationByPostIdAndAuthorId(postId, authorId);
+        boolean exists = reservationQueryRepository.existsActiveReservation(postId, authorId);
         if (exists) {
             throw new ServiceException("400-2", "이미 해당 게시글에 예약이 존재합니다.");
         }
@@ -453,10 +451,7 @@ public class ReservationService {
         reservationRepository.save(reservation);
 
         // 상태 전환 로그 저장
-        ReservationLog log = ReservationLog.builder()
-                .reservation(reservation)
-                .status(reservation.getStatus())
-                .build();
+        ReservationLog log = new ReservationLog(reservation.getStatus(), reservation);
         reservationLogRepository.save(log);
     }
 
