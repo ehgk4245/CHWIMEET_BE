@@ -5,6 +5,7 @@ import com.back.domain.post.dto.req.PostUpdateReqBody;
 import com.back.domain.post.dto.res.PostDetailResBody;
 import com.back.domain.post.dto.res.PostListResBody;
 import com.back.domain.post.service.PostService;
+import com.back.global.rsData.RsData;
 import com.back.global.security.SecurityUser;
 import com.back.standard.util.page.PagePayload;
 import jakarta.validation.Valid;
@@ -27,96 +28,82 @@ public class PostController implements PostApi {
 
     private final PostService postService;
 
-    @Override
     @PostMapping
-    public ResponseEntity<String> createPost(
+    public ResponseEntity<RsData<Long>> createPost(
             @Valid @RequestBody PostCreateReqBody reqBody,
-            @AuthenticationPrincipal SecurityUser user
-    ) {
-        postService.createPost(reqBody, user.getId());
+            @AuthenticationPrincipal SecurityUser user) {
+        Long postId = this.postService.createPost(reqBody, user.getId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("게시글이 생성되었습니다");
+        return ResponseEntity.status(HttpStatus.CREATED).body(new RsData<>(HttpStatus.CREATED, "게시글이 생성되었습니다.", postId));
     }
 
-    @Override
     @GetMapping
-    public ResponseEntity<PagePayload<PostListResBody>> getPostList(
+    public ResponseEntity<RsData<PagePayload<PostListResBody>>> getPostList(
             @AuthenticationPrincipal SecurityUser user,
-            @ParameterObject
-            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
-            Pageable pageable,
+            @ParameterObject @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) List<Long> regionIds
-    ) {
+            @RequestParam(required = false) List<Long> regionIds) {
+
         Long memberId = (user != null) ? user.getId() : null;
-        PagePayload<PostListResBody> body = postService.getPostList(pageable, keyword, categoryId, regionIds, memberId);
-        return ResponseEntity.ok(body);
+        PagePayload<PostListResBody> body = this.postService.getPostList(pageable, keyword, categoryId, regionIds, memberId);
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "성공", body));
     }
 
-    @Override
-    @GetMapping("/{postId}")
-    public ResponseEntity<PostDetailResBody> getPostById(
-            @PathVariable Long postId,
+    @GetMapping("/{id}")
+    public ResponseEntity<RsData<PostDetailResBody>> getPostById(
+            @PathVariable Long id,
             @AuthenticationPrincipal SecurityUser user) {
-        PostDetailResBody body = postService.getPostById(postId, user.getId());
-        return ResponseEntity.ok(body);
+        PostDetailResBody body = this.postService.getPostById(id, user.getId());
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "성공", body));
     }
 
-    @Override
     @GetMapping("/my")
-    public ResponseEntity<PagePayload<PostListResBody>> getMyPostList(
+    public ResponseEntity<RsData<PagePayload<PostListResBody>>> getMyPostList(
             @AuthenticationPrincipal SecurityUser user,
-            @ParameterObject
-            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
-            Pageable pageable
-    ) {
-        PagePayload<PostListResBody> body = postService.getMyPosts(user.getId(), pageable);
-        return ResponseEntity.ok(body);
+            @ParameterObject @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        PagePayload<PostListResBody> body = this.postService.getMyPosts(user.getId(), pageable);
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "성공", body));
     }
 
-    @Override
-    @PostMapping("/favorites/{postId}")
-    public ResponseEntity<String> toggleFavorite(
-            @PathVariable Long postId,
+    @PostMapping("/favorites/{id}")
+    public ResponseEntity<RsData<Boolean>> toggleFavorite(
+            @PathVariable("id") Long postId,
             @AuthenticationPrincipal SecurityUser user) {
+
         boolean isFavorite = postService.toggleFavorite(postId, user.getId());
-        return ResponseEntity.ok(isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기가 해제되었습니다.");
+
+        String msg = isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기가 해제되었습니다.";
+
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, msg, isFavorite));
     }
 
-    @Override
     @GetMapping("/favorites")
-    public ResponseEntity<PagePayload<PostListResBody>> getFavoritePosts(
+    public ResponseEntity<RsData<PagePayload<PostListResBody>>> getFavoritePosts(
             @AuthenticationPrincipal SecurityUser user,
-            @ParameterObject
-            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
-            Pageable pageable
-    ) {
-        PagePayload<PostListResBody> body = postService.getFavoritePosts(user.getId(), pageable);
-        return ResponseEntity.ok(body);
+            @ParameterObject @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        PagePayload<PostListResBody> body = this.postService.getFavoritePosts(user.getId(), pageable);
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "성공", body));
     }
 
-    @Override
-    @PutMapping("/{postId}")
-    public ResponseEntity<String> updatePost(
-            @PathVariable Long postId,
+    @PutMapping("/{id}")
+    public ResponseEntity<RsData<Void>> updatePost(
+            @PathVariable Long id,
             @Valid @RequestBody PostUpdateReqBody reqBody,
-            @AuthenticationPrincipal SecurityUser user
-    ) {
-        postService.updatePost(postId, reqBody, user.getId());
+            @AuthenticationPrincipal SecurityUser user) {
 
-        return ResponseEntity.ok("게시글이 수정되었습니다.");
+        postService.updatePost(id, reqBody, user.getId());
+
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "게시글이 수정되었습니다."));
     }
 
-    @Override
-    @DeleteMapping("/{postId}")
-    public ResponseEntity<String> deletePost(
-            @PathVariable Long postId,
-            @AuthenticationPrincipal SecurityUser user
-    ) {
-        postService.deletePost(postId, user.getId());
+    @DeleteMapping("/{id}")
+    public ResponseEntity<RsData<Void>> deletePost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal SecurityUser user) {
+        this.postService.deletePost(id, user.getId());
 
-        return ResponseEntity.ok("게시글이 삭제되었습니다.");
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "게시글이 삭제되었습니다."));
     }
 
 }
