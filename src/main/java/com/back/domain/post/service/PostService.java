@@ -11,6 +11,7 @@ import com.back.domain.post.dto.res.PostListResBody;
 import com.back.domain.post.entity.*;
 import com.back.domain.post.repository.PostFavoriteRepository;
 import com.back.domain.post.repository.PostOptionRepository;
+import com.back.domain.post.repository.PostQueryRepository;
 import com.back.domain.post.repository.PostRepository;
 import com.back.domain.region.entity.Region;
 import com.back.domain.region.repository.RegionRepository;
@@ -33,6 +34,7 @@ public class PostService {
     private final MemberRepository memberRepository;
     private final PostOptionRepository postOptionRepository;
     private final PostFavoriteRepository postFavoriteRepository;
+    private final PostQueryRepository postQueryRepository;
 
     private final RegionRepository regionRepository;
     private final CategoryRepository categoryRepository;
@@ -74,7 +76,7 @@ public class PostService {
 
         if (regionIds != null && regionIds.isEmpty()) regionIds = null;
 
-        Page<Post> postPage = hasFilter ? this.postRepository.findFilteredPosts(keyword, categoryId, regionIds, pageable) : this.postRepository.findAll(pageable);
+        Page<Post> postPage = hasFilter ? this.postQueryRepository.findFilteredPosts(keyword, categoryId, regionIds, pageable) : this.postRepository.findAll(pageable);
 
         Page<PostListResBody> mappedPage = postPage.map(post -> {
 
