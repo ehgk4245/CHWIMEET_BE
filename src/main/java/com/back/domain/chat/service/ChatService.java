@@ -116,8 +116,7 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatMessageDto saveMessage(SendChatMessageDto body, Long memberId) {
-        Long chatRoomId = body.chatRoomId();
+    public ChatMessageDto saveMessage(Long chatRoomId, SendChatMessageDto body, Long memberId) {
         String content = body.content();
 
         Long chatMemberId = chatQueryRepository.findChatMemberId(chatRoomId, memberId);

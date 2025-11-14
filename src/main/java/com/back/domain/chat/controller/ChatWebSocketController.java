@@ -20,11 +20,11 @@ public class ChatWebSocketController {
 
     @MessageMapping("/chat/{chatRoomId}")
     public void sendMessage(
-            @DestinationVariable String chatRoomId,
+            @DestinationVariable Long chatRoomId,
             @Payload SendChatMessageDto body,
             @AuthenticationPrincipal SecurityUser securityUser
     ) {
-        ChatMessageDto chatMessageDto = chatService.saveMessage(body, securityUser.getId());
+        ChatMessageDto chatMessageDto = chatService.saveMessage(chatRoomId, body, securityUser.getId());
 
         simpMessagingTemplate.convertAndSend("/sub/chat/" + chatRoomId, chatMessageDto);
     }
