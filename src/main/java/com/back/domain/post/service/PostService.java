@@ -114,7 +114,7 @@ public class PostService {
         Member member = this.memberRepository.findById(memberId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
 
         if (post.getAuthor().getId().equals(member.getId()))
-            throw new ServiceException(HttpStatus.NOT_FOUND, "본인의 게시글은 즐겨찾기 할 수 없습니다.");
+            throw new ServiceException(HttpStatus.FORBIDDEN, "본인의 게시글은 즐겨찾기 할 수 없습니다.");
 
         return this.postFavoriteRepository.findByMemberIdAndPostId(memberId, postId).map(fav -> {
             this.postFavoriteRepository.delete(fav);

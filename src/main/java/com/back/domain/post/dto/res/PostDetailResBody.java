@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record PostDetailResBody(
-        Long postId,
+        Long id,
         String title,
         String content,
         Long categoryId,

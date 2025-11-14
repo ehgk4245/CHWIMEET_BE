@@ -9,7 +9,7 @@ import java.util.List;
 
 
 public record PostListResBody(
-        Long postId,
+        Long id,
         String title,
         String thumbnailImageUrl,
         Long categoryId,
