@@ -63,6 +63,20 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
                 ? null
                 : postRegion.region.id.in(regionIds);
     }
+
+    public Page<Post> findMyPost(Long memberId, Pageable pageable) {
+
+        return applyPagination(
+                pageable,
+                contentQuery -> contentQuery
+                        .selectFrom(post)
+                        .where(post.author.id.eq(memberId)),
+                countQuery -> countQuery
+                        .select(post.count())
+                        .from(post)
+                        .where(post.author.id.eq(memberId))
+        );
+    }
 }
 
 

@@ -96,7 +96,7 @@ public class PostService {
     }
 
     public PagePayload<PostListResBody> getMyPosts(Long memberId, Pageable pageable) {
-        Page<PostListResBody> result = this.postRepository.findAllByAuthorId(memberId, pageable).map(p -> PostListResBody.of(p, false));
+        Page<PostListResBody> result = this.postQueryRepository.findMyPost(memberId, pageable).map(p -> PostListResBody.of(p, false));
 
         return PageUt.of(result);
     }
