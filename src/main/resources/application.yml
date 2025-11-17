@@ -2,7 +2,7 @@ spring:
   application:
     name: Chwi-Meet
   config:
-    import: optional:file:.env[.properties]
+    import: optional:file:.env[.properties], classpath:system-prompt.yml
   profiles:
     active: dev
   output:
@@ -29,6 +29,14 @@ spring:
       port: ${SPRING__REDIS__PORT}
       timeout: 10000
       password: ${SPRING__REDIS__PASSWORD}
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4.1-mini
+          temperature: 0.0
+          max-completion-tokens: 1024
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
 logging:
