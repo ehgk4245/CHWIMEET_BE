@@ -21,7 +21,7 @@ public enum ReservationStatus {
     INSPECTING_RETURN("반납 검수", true, ReservationStatusSubject.HOST),
     PENDING_REFUND("환급 예정", true, ReservationStatusSubject.HOST),
     REFUND_COMPLETED("환급 완료", true, ReservationStatusSubject.SYSTEM_OR_ANY),
-    LOST_OR_UNRETURNED("미반납/분실", false, ReservationStatusSubject.HOST),
+    LOST_OR_UNRETURNED("미반납/분실", false, ReservationStatusSubject.GUEST),
     CLAIMING("청구 진행", false, ReservationStatusSubject.HOST),
     CLAIM_COMPLETED("청구 완료", true, ReservationStatusSubject.SYSTEM_OR_ANY),
     REJECTED("승인 거절", false, ReservationStatusSubject.HOST),
@@ -48,7 +48,7 @@ public enum ReservationStatus {
         transitions.put(RETURNING, Set.of(RETURN_COMPLETED));
         transitions.put(RETURN_COMPLETED, Set.of(INSPECTING_RETURN));
         transitions.put(INSPECTING_RETURN, Set.of(PENDING_REFUND));
-        transitions.put(PENDING_REFUND, Set.of(REFUND_COMPLETED));
+        transitions.put(PENDING_REFUND, Set.of(REFUND_COMPLETED, CLAIMING));
         transitions.put(LOST_OR_UNRETURNED, Set.of(CLAIMING));
         transitions.put(CLAIMING, Set.of(CLAIM_COMPLETED));
 
