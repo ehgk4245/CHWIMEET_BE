@@ -47,8 +47,8 @@ public enum ReservationStatus {
         transitions.put(PENDING_RETURN, Set.of(RETURNING, RETURN_COMPLETED));
         transitions.put(RETURNING, Set.of(RETURN_COMPLETED));
         transitions.put(RETURN_COMPLETED, Set.of(INSPECTING_RETURN));
-        transitions.put(INSPECTING_RETURN, Set.of(PENDING_REFUND));
-        transitions.put(PENDING_REFUND, Set.of(REFUND_COMPLETED, CLAIMING));
+        transitions.put(INSPECTING_RETURN, Set.of(PENDING_REFUND, CLAIMING));
+        transitions.put(PENDING_REFUND, Set.of(REFUND_COMPLETED));
         transitions.put(LOST_OR_UNRETURNED, Set.of(CLAIMING));
         transitions.put(CLAIMING, Set.of(CLAIM_COMPLETED));
 
