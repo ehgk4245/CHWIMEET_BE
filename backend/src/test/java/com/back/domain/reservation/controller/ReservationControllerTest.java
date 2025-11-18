@@ -273,7 +273,8 @@ class ReservationControllerTest {
                         LocalDateTime.now(),
                         LocalDateTime.now(),
                         List.of(),
-                        50000
+                        50000,
+                        false
                 )
         );
 
@@ -321,7 +322,8 @@ class ReservationControllerTest {
                         LocalDateTime.now(),
                         LocalDateTime.now(),
                         List.of(),
-                        50000
+                        50000,
+                        false
                 )
         );
 

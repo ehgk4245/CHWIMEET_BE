@@ -9,7 +9,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.back.domain.post.entity.QPost.post;
 import static com.back.domain.reservation.entity.QReservation.reservation;
@@ -87,5 +90,21 @@ public class ReviewQueryRepository extends CustomQuerydslRepositorySupport {
                 .orderBy(review.id.desc())
                 .limit(30)
                 .fetch();
+    }
+
+    public Set<Long> findReviewedReservationIds(List<Long> reservationIds, Long authorId) {
+        if (reservationIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<>(
+                select(review.reservation.id)
+                        .from(review)
+                        .where(
+                                review.reservation.id.in(reservationIds),
+                                review.reservation.author.id.eq(authorId)
+                                )
+                        .fetch()
+        );
     }
 }
