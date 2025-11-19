@@ -127,7 +127,13 @@ public class PostService {
     public PostDetailResBody getPostById(Long postId, Long memberId) {
         Post post = this.postRepository.findById(postId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "%d번 글은 존재하지 않는 게시글입니다.".formatted(postId)));
 
-        boolean isFavorite = this.postFavoriteRepository.findByMemberIdAndPostId(memberId, postId).isPresent();
+        boolean isFavorite = false;
+
+        if (memberId != null) {
+            isFavorite = this.postFavoriteRepository
+                    .findByMemberIdAndPostId(memberId, postId)
+                    .isPresent();
+        }
 
         List<LocalDateTime> reservedDates = postQueryRepository.findReservedDatesFromToday(postId);
 

@@ -62,8 +62,12 @@ public class PostController implements PostApi {
     @GetMapping("/{id}")
     public ResponseEntity<RsData<PostDetailResBody>> getPostById(
             @PathVariable Long id,
-            @AuthenticationPrincipal SecurityUser user) {
-        PostDetailResBody body = this.postService.getPostById(id, user.getId());
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        Long memberId = (user != null) ? user.getId() : null;
+
+        PostDetailResBody body = this.postService.getPostById(id, memberId);
+
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "성공", body));
     }
 
