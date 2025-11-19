@@ -62,6 +62,14 @@ public class MemberService {
             String profileImgUrl = s3.upload(profileImage);
             member.updateProfileImage(profileImgUrl);
         }
+        // removeProfileImage true 면 프로필 이미지 삭제
+        else if (reqBody.removeProfileImage()) {
+            // 기존 이미지가 DB에 기록되어 있다면 S3에서 파일 삭제
+            if (member.getProfileImgUrl() != null) {
+                s3.delete(member.getProfileImgUrl());
+            }
+            member.updateProfileImage(null);
+        }
 
         return memberRepository.save(member);
     }

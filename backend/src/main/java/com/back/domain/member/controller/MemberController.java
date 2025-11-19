@@ -78,7 +78,7 @@ public class MemberController implements MemberApi{
     @PatchMapping("/me")
     public ResponseEntity<RsData<MemberDto>> updateMe(
             @AuthenticationPrincipal SecurityUser securityUser,
-            @Valid @RequestBody MemberUpdateReqBody reqBody,
+            @Valid @RequestPart(value = "reqBody") MemberUpdateReqBody reqBody,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
         Member member = memberService.updateMember(securityUser.getId(), reqBody, profileImage);

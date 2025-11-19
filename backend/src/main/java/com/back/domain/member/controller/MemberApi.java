@@ -33,7 +33,7 @@ public interface MemberApi {
     @Operation(summary = "내 정보 수정", description = "로그인한 회원의 정보를 수정합니다.")
     ResponseEntity<RsData<MemberDto>> updateMe(
             @AuthenticationPrincipal SecurityUser securityUser,
-            @Valid @RequestBody MemberUpdateReqBody reqBody,
+            @Valid @RequestPart(value = "reqBody") MemberUpdateReqBody reqBody,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     );
 

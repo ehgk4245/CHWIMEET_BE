@@ -1,6 +1,7 @@
 package com.back.domain.member.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record MemberUpdateReqBody(
         @NotBlank
@@ -10,6 +11,8 @@ public record MemberUpdateReqBody(
         @NotBlank
         String nickname,
         @NotBlank
-        String phoneNumber
+        String phoneNumber,
+        @NotNull
+        Boolean removeProfileImage
 ) {
 }
