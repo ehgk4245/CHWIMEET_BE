@@ -26,7 +26,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -51,9 +50,6 @@ public class ReservationService {
                 reqBody.reservationEndAt(),
                 null
         );
-
-        // 같은 게스트의 중복 예약 체크 (게시글 ID 필요)
-        validateNoDuplicateReservation(post.getId(), author.getId());
 
         // 자신의 게시글에 대한 예약 금지
         if (post.getAuthor().getId().equals(author.getId())) {
@@ -108,14 +104,6 @@ public class ReservationService {
 
         if (hasOverlap) {
             throw new ServiceException(HttpStatus.BAD_REQUEST, "해당 기간에 이미 예약이 있습니다.");
-        }
-    }
-
-    // 같은 게스트의 중복 예약 체크
-    private void validateNoDuplicateReservation(Long postId, Long authorId) {
-        boolean exists = reservationQueryRepository.existsActiveReservation(postId, authorId);
-        if (exists) {
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "이미 해당 게시글에 예약이 존재합니다.");
         }
     }
 

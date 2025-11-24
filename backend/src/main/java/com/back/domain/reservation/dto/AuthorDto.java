@@ -10,7 +10,7 @@ public record AuthorDto(
     public AuthorDto(Member member) {
         this (
                 member.getId(),
-                member.getName(),
+                member.getNickname(),
                 member.getProfileImgUrl()
         );
     }
