@@ -5,26 +5,7 @@ spring:
     password: ${SPRING__DATASOURCE__PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        highlight_sql: true
-        use_sql_comments: true
-    show-sql: true
-
   ai:
-    openai:
-      api-key: ${OPENAI_API_KEY}
-      chat:
-        options:
-          model: gpt-4.1-mini
-      embedding:
-        options:
-          model: text-embedding-3-small
-
     vectorstore:
       mariadb:
         initialize-schema: true

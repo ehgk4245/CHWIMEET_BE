@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -41,7 +42,7 @@ public class PostController implements PostApi {
             @RequestPart(value = "file", required = false) List<MultipartFile> files,
             @AuthenticationPrincipal SecurityUser user
     ) {
-        
+
         PostCreateResBody body = this.postService.createPost(reqBody, files, user.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -128,6 +129,7 @@ public class PostController implements PostApi {
 
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, HttpStatus.OK.name(), body));
     }
+
     @GetMapping("/search")
     public ResponseEntity<?> searchPosts(
             @RequestParam String query,
@@ -139,5 +141,15 @@ public class PostController implements PostApi {
         List<PostListResBody> result = postSearchService.searchPosts(query, memberId);
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/search/LLM")
+    public ResponseEntity<?> searchPosts(@RequestParam String query) {
+        String answer = postSearchService.searchWithLLM(query);
+
+        return ResponseEntity.ok(Map.of(
+                "query", query,
+                "answer", answer
+        ));
     }
 }

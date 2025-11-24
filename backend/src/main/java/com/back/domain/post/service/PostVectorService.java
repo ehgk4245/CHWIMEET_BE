@@ -47,4 +47,13 @@ public class PostVectorService {
                 .map(Number::longValue)
                 .toList();
     }
+    public List<Document> searchDocuments(String query, int topK) {
+        SearchRequest request = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .build();
+
+        return vectorStore.similaritySearch(request);
+
+    }
 }
