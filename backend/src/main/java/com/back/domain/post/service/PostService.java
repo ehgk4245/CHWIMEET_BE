@@ -280,4 +280,7 @@ public class PostService {
         this.postRepository.delete(post);
     }
 
+    public List<LocalDateTime> getReservedDates(Long id) {
+        return postQueryRepository.findReservedDatesFromToday(id);
+    }
 }
