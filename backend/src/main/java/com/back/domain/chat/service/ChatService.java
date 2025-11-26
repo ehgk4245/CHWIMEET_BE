@@ -12,6 +12,7 @@ import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.post.entity.Post;
 import com.back.domain.post.repository.PostRepository;
 import com.back.global.exception.ServiceException;
+import com.back.global.s3.S3Uploader;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class ChatService {
     private final StringRedisTemplate redisTemplate;
     private final ChatMessagePublisher chatMessagePublisher;
     private final ChatNotificationPublisher chatNotificationPublisher;
+    private final S3Uploader s3;
 
     @Transactional
     public CreateChatRoomResBody createOrGetChatRoom(Long postId, Long memberId) {
@@ -71,7 +73,7 @@ public class ChatService {
         OtherMemberDto otherMemberDto = new OtherMemberDto(
                 guest.getId(),
                 guest.getNickname(),
-                guest.getProfileImgUrl()
+                s3.generatePresignedUrl(guest.getProfileImgUrl())
         );
 
         NewRoomNotiDto newRoom = new NewRoomNotiDto(
@@ -100,7 +102,9 @@ public class ChatService {
             String unreadStr = redisTemplate.opsForValue().get(key);
             Integer unreadCount = unreadStr == null ? 0 : Integer.parseInt(unreadStr);
 
-            return dto.withUnreadCount(unreadCount);
+            String otherProfileImgUrl = dto.otherMember().profileImgUrl();
+            String presignedUrl = s3.generatePresignedUrl(otherProfileImgUrl);
+            return dto.withUnreadCount(unreadCount, presignedUrl);
         });
 
         return PageUt.of(enrichedPage);
@@ -122,7 +126,7 @@ public class ChatService {
         OtherMemberDto otherMemberDto = new OtherMemberDto(
                 otherMember.getId(),
                 otherMember.getNickname(),
-                otherMember.getProfileImgUrl()
+                s3.generatePresignedUrl(otherMember.getProfileImgUrl())
         );
 
         return new ChatRoomDto(chatRoom.getId(), chatRoom.getCreatedAt(), chatPostDto, otherMemberDto);
