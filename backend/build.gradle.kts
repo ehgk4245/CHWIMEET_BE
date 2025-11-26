@@ -65,6 +65,9 @@ dependencies {
 
     // STMP
     implementation("org.springframework.boot:spring-boot-starter-mail")
+
+    // Quartz
+    implementation("org.springframework.boot:spring-boot-starter-quartz")
 }
 
 val querydslSrcDir = "src/main/generated"
