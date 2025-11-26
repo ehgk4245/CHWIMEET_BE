@@ -4,12 +4,14 @@ import com.back.domain.category.dto.CategoryResBody;
 import com.back.domain.category.entity.Category;
 import com.back.domain.category.repository.CategoryRepository;
 import com.back.domain.post.dto.res.GenPostDetailResBody;
+import com.back.global.optimizer.ImageOptimizer;
 import com.back.standard.util.json.JsonUt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -21,6 +23,7 @@ public class PostContentGenerateService {
 
     private final ChatClient chatClient;
     private final CategoryRepository categoryRepository;
+    private final ImageOptimizer imageOptimizer;
 
     @Value("${custom.ai.post-detail-gen-prompt}")
     private String systemPrompt;
@@ -29,6 +32,9 @@ public class PostContentGenerateService {
     private String defaultUserPrompt;
 
     public GenPostDetailResBody generatePostDetail(List<MultipartFile> imageFiles, String additionalInfo) {
+
+        List<Resource> optimizedImages = imageOptimizer.optimizeImages(imageFiles);
+
         String categoriesJson = getCategoriesJson();
 
         String userPrompt = defaultUserPrompt
@@ -39,8 +45,8 @@ public class PostContentGenerateService {
                 .system(systemPrompt)
                 .user(user -> {
                     user.text(userPrompt);
-                    for (MultipartFile file : imageFiles) {
-                        user.media(MimeTypeUtils.parseMimeType(file.getContentType()), file.getResource());
+                    for (Resource image : optimizedImages) {
+                        user.media(MediaType.IMAGE_JPEG, image);
                     }
                 })
                 .call()
