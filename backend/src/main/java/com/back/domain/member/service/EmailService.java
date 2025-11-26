@@ -1,8 +1,8 @@
 package com.back.domain.member.service;
 
+import com.back.domain.member.repository.EmailRedisRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,26 +10,19 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
-    private static final String REDIS_KEY_PREFIX = "email:verify:signup:";
-    private static final long TTL_SECONDS = 5 * 60L;
-
-    private final StringRedisTemplate stringRedisTemplate;
+    private final EmailRedisRepository emailRedisRepository;
     private final JavaMailSender mailSender;
 
     public LocalDateTime sendVerificationCode(String email) {
         String code = generateCode();
-        String key = buildKey(email);
-
-        stringRedisTemplate.opsForValue()
-                .set(key, code, TTL_SECONDS, TimeUnit.SECONDS);
+        emailRedisRepository.saveCode(email, code);
 
         // 만료 시간 계산 (서버 기준 현재 시간 + TTL)
-        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(TTL_SECONDS);
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
 
         String subject = "[Chwi-Meet] 이메일 인증코드 안내";
         String content = """
@@ -56,8 +49,7 @@ public class EmailService {
     }
 
     public void verifyCode(String email, String code) {
-        String key = buildKey(email);
-        String savedCode = stringRedisTemplate.opsForValue().get(key);
+        String savedCode = emailRedisRepository.getCode(email);
 
         if (savedCode == null) {
             throw new ServiceException(HttpStatus.GONE, "인증코드가 만료되었거나 존재하지 않습니다.");
@@ -67,11 +59,7 @@ public class EmailService {
             throw new ServiceException(HttpStatus.BAD_REQUEST, "인증코드가 일치하지 않습니다.");
         }
 
-        stringRedisTemplate.delete(key);
-    }
-
-    private String buildKey(String email) {
-        return REDIS_KEY_PREFIX + email;
+        emailRedisRepository.deleteCode(email);
     }
 
     private String generateCode() {

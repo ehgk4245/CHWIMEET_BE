@@ -12,6 +12,7 @@ import org.springframework.web.multipart.support.MultipartResolutionDelegate;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -115,7 +116,7 @@ public class ApiLoggingFilter extends CommonsRequestLoggingFilter {
         if (isIncludeQueryString()) {
             String queryString = request.getQueryString();
             if (queryString != null) {
-                msg.append('?').append(queryString);
+                msg.append('?').append(URLDecoder.decode(queryString, StandardCharsets.UTF_8));
             }
         }
     }

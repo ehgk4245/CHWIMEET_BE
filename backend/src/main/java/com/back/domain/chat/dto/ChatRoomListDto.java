@@ -12,12 +12,12 @@ public record ChatRoomListDto(
         LocalDateTime lastMessageTime,
         Integer unreadCount
 ) {
-    public ChatRoomListDto withUnreadCount(Integer unreadCount) {
+    public ChatRoomListDto withUnreadCount(Integer unreadCount, String profileImgUrl) {
         return new ChatRoomListDto(
                 this.id,
                 this.createdAt,
                 this.post,
-                this.otherMember,
+                new OtherMemberDto(this.otherMember.id(), this.otherMember.nickname(), profileImgUrl),
                 this.lastMessage,
                 this.lastMessageTime,
                 unreadCount

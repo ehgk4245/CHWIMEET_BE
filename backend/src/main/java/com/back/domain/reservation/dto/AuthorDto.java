@@ -7,11 +7,11 @@ public record AuthorDto(
         String nickname,
         String profileImgUrl
 ) {
-    public AuthorDto(Member member) {
+    public AuthorDto(Member member, String profileImgUrl) {
         this (
                 member.getId(),
                 member.getNickname(),
-                member.getProfileImgUrl()
+                profileImgUrl
         );
     }
 }

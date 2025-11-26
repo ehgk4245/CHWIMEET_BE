@@ -17,21 +17,26 @@ import com.back.domain.reservation.entity.ReservationOption;
 import com.back.domain.reservation.repository.ReservationLogRepository;
 import com.back.domain.reservation.repository.ReservationQueryRepository;
 import com.back.domain.reservation.repository.ReservationRepository;
+import com.back.domain.reservation.scheduler.ReservationRemindScheduler;
 import com.back.domain.review.repository.ReviewQueryRepository;
 import com.back.global.exception.ServiceException;
+import com.back.global.s3.S3Uploader;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
@@ -41,6 +46,9 @@ public class ReservationService {
     private final ReviewQueryRepository reviewQueryRepository;
     private final MemberRepository memberRepository;
     private final PostService postService;
+    private final S3Uploader s3;
+
+    private final ReservationRemindScheduler reminderScheduler;
 
     public ReservationDto create(CreateReservationReqBody reqBody, Member author) {
         Post post = postService.getById(reqBody.postId());
@@ -91,6 +99,13 @@ public class ReservationService {
         }
 
         Reservation r = reservationRepository.save(reservation);
+
+        // 스케줄러에 등록
+        reminderScheduler.scheduleReturnReminder(
+                r.getId(),
+                r.getReservationEndAt()
+        );
+
         return convertToReservationDto(r);
     }
 
@@ -251,13 +266,13 @@ public class ReservationService {
                 new AuthorDto(
                         post.getAuthor().getId(),
                         post.getAuthor().getNickname(),
-                        post.getAuthor().getProfileImgUrl()
+                        s3.generatePresignedUrl(post.getAuthor().getProfileImgUrl())
                 );
 
         String thumbnailUrl = post.getImages().stream()
                 .filter(img -> img.getIsPrimary() != null && img.getIsPrimary())
                 .findFirst()
-                .map(img -> img.getImageUrl())
+                .map(img -> s3.generatePresignedUrl(img.getImageUrl()))
                 .orElse(null);
 
         return new GuestReservationSummaryResBody.ReservationPostSummaryDto(
@@ -296,11 +311,13 @@ public class ReservationService {
                     ))
                     .toList();
 
+            String profileImgUrl = s3.generatePresignedUrl(reservation.getAuthor().getProfileImgUrl());
             // 최종 DTO 생성 (HostReservationSummaryResBody의 생성자 사용)
             return new HostReservationSummaryResBody(
                     reservation,
                     optionDtos,
-                    totalAmount
+                    totalAmount,
+                    profileImgUrl
             );
         });
 
@@ -518,11 +535,41 @@ public class ReservationService {
                 })
                 .toList();
 
+        String profileImgUrl = s3.generatePresignedUrl(reservation.getAuthor().getProfileImgUrl());
+
         return new ReservationDto(
                 reservation,
                 optionDtos,
                 logDtos,
-                totalAmount
+                totalAmount,
+                profileImgUrl
         );
+    }
+
+    @Transactional
+    public void updateReservationStatuses() {
+        updateClaimingStatus();
+        updatePendingRefundStatus();
+    }
+
+    private void updateClaimingStatus() {
+        List<Reservation> reservations = reservationRepository.findByStatus(ReservationStatus.CLAIMING);
+
+        reservations.forEach(reservation -> {
+            reservation.changeStatus(ReservationStatus.CLAIM_COMPLETED);
+            // Dirty Checking 작동
+        });
+
+        log.info("CLAIMING → CLAIM_COMPLETED 상태 변경 완료 - 처리 건수: {}", reservations.size());
+    }
+
+    private void updatePendingRefundStatus() {
+        List<Reservation> reservations = reservationRepository.findByStatus(ReservationStatus.PENDING_REFUND);
+
+        reservations.forEach(reservation -> {
+            reservation.changeStatus(ReservationStatus.REFUND_COMPLETED);
+        });
+
+        log.info("PENDING_REFUND → REFUND_COMPLETED 상태 변경 완료 - 처리 건수: {}", reservations.size());
     }
 }

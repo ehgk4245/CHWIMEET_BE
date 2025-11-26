@@ -4,7 +4,6 @@ import com.back.domain.reservation.common.ReservationDeliveryMethod;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.entity.Reservation;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,11 +23,11 @@ public record HostReservationSummaryResBody(
         List<OptionDto> option,
         int totalAmount
 ) {
-    public HostReservationSummaryResBody(Reservation reservation, List<OptionDto> optionDtos, int calculatedTotalAmount) {
+    public HostReservationSummaryResBody(Reservation reservation, List<OptionDto> optionDtos, int calculatedTotalAmount, String profileImgUrl) {
         this(
                 reservation.getId(),
                 reservation.getPost().getId(),
-                new AuthorDto(reservation.getAuthor()),
+                new AuthorDto(reservation.getAuthor(), profileImgUrl),
                 reservation.getStatus(),
                 reservation.getReceiveMethod(),
                 reservation.getReturnMethod(),

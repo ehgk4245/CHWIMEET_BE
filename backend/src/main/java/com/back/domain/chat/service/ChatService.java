@@ -4,18 +4,21 @@ import com.back.domain.chat.dto.*;
 import com.back.domain.chat.entity.ChatMember;
 import com.back.domain.chat.entity.ChatMessage;
 import com.back.domain.chat.entity.ChatRoom;
+import com.back.domain.chat.pubsub.publisher.ChatMessagePublisher;
+import com.back.domain.chat.pubsub.publisher.ChatNotificationPublisher;
 import com.back.domain.chat.repository.*;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.post.entity.Post;
 import com.back.domain.post.repository.PostRepository;
 import com.back.global.exception.ServiceException;
+import com.back.global.s3.S3Uploader;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +30,6 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class ChatService {
 
-    private final ChatWebsocketService chatWebsocketService;
     private final MemberRepository memberRepository;
     private final PostRepository postRepository;
     private final ChatRoomRepository chatRoomRepository;
@@ -35,7 +37,10 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomQueryRepository chatRoomQueryRepository;
     private final ChatMessageQueryRepository chatMessageQueryRepository;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final StringRedisTemplate redisTemplate;
+    private final ChatMessagePublisher chatMessagePublisher;
+    private final ChatNotificationPublisher chatNotificationPublisher;
+    private final S3Uploader s3;
 
     @Transactional
     public CreateChatRoomResBody createOrGetChatRoom(Long postId, Long memberId) {
@@ -68,7 +73,7 @@ public class ChatService {
         OtherMemberDto otherMemberDto = new OtherMemberDto(
                 guest.getId(),
                 guest.getNickname(),
-                guest.getProfileImgUrl()
+                s3.generatePresignedUrl(guest.getProfileImgUrl())
         );
 
         NewRoomNotiDto newRoom = new NewRoomNotiDto(
@@ -81,7 +86,7 @@ public class ChatService {
                 0
         );
 
-        chatWebsocketService.notify(
+        chatNotificationPublisher.publish(
                 hostId,
                 new ChatNotiDto("NEW_ROOM", newRoom)
         );
@@ -97,7 +102,9 @@ public class ChatService {
             String unreadStr = redisTemplate.opsForValue().get(key);
             Integer unreadCount = unreadStr == null ? 0 : Integer.parseInt(unreadStr);
 
-            return dto.withUnreadCount(unreadCount);
+            String otherProfileImgUrl = dto.otherMember().profileImgUrl();
+            String presignedUrl = s3.generatePresignedUrl(otherProfileImgUrl);
+            return dto.withUnreadCount(unreadCount, presignedUrl);
         });
 
         return PageUt.of(enrichedPage);
@@ -119,7 +126,7 @@ public class ChatService {
         OtherMemberDto otherMemberDto = new OtherMemberDto(
                 otherMember.getId(),
                 otherMember.getNickname(),
-                otherMember.getProfileImgUrl()
+                s3.generatePresignedUrl(otherMember.getProfileImgUrl())
         );
 
         return new ChatRoomDto(chatRoom.getId(), chatRoom.getCreatedAt(), chatPostDto, otherMemberDto);
@@ -164,9 +171,9 @@ public class ChatService {
                 chatMessage.getCreatedAt()
         );
 
-        chatWebsocketService.broadcastMessage(chatRoomId, chatMessageDto);
+        chatMessagePublisher.publish(chatRoomId, chatMessageDto);
 
-        chatWebsocketService.notify(
+        chatNotificationPublisher.publish(
                 otherMemberId,
                 new ChatNotiDto("NEW_MESSAGE", NewMessageNotiDto.from(chatRoomId, chatMessageDto))
         );

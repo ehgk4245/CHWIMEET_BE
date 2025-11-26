@@ -41,6 +41,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.3.3")
     runtimeOnly("com.h2database:h2")
+    
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     // JWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
@@ -63,12 +64,21 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:mariadb")
 
     // AWS S3
     implementation("software.amazon.awssdk:s3:2.25.10")
 
     // STMP
     implementation("org.springframework.boot:spring-boot-starter-mail")
+
+    // Quartz
+    implementation("org.springframework.boot:spring-boot-starter-quartz")
+
+    // OAUTH2
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 }
 
 val querydslSrcDir = "src/main/generated"

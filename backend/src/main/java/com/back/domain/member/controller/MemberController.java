@@ -8,6 +8,7 @@ import com.back.domain.member.service.MemberService;
 import com.back.domain.member.service.RefreshTokenStore;
 import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
+import com.back.global.s3.S3Uploader;
 import com.back.global.security.SecurityUser;
 import com.back.global.web.CookieHelper;
 import jakarta.validation.Valid;
@@ -29,14 +30,15 @@ public class MemberController implements MemberApi{
     private final RefreshTokenStore refreshTokenStore;
     private final CookieHelper cookieHelper;
     private final EmailService emailService;
+    private final S3Uploader s3Uploader;
 
     @PostMapping
     public ResponseEntity<RsData<MemberDto>> join(
             @Valid @RequestBody MemberJoinReqBody reqBody
     ) {
         Member member =memberService.join(reqBody);
-
-        return ResponseEntity.status(201).body(new RsData<>(HttpStatus.CREATED, "회원가입 되었습니다.", new MemberDto(member)));
+        String presignedUrl = s3Uploader.generatePresignedUrl(member.getProfileImgUrl());
+        return ResponseEntity.status(201).body(new RsData<>(HttpStatus.CREATED, "회원가입 되었습니다.", new MemberDto(member, presignedUrl)));
     }
 
     @PostMapping("/login")
@@ -54,7 +56,8 @@ public class MemberController implements MemberApi{
         cookieHelper.setCookie("accessToken", accessToken);
         cookieHelper.setCookie("refreshToken", refreshToken);
 
-        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "로그인 되었습니다.", new MemberDto(member)));
+        String presignedUrl = s3Uploader.generatePresignedUrl(member.getProfileImgUrl());
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "로그인 되었습니다.", new MemberDto(member, presignedUrl)));
     }
 
     @PostMapping("/logout")
@@ -76,7 +79,8 @@ public class MemberController implements MemberApi{
     ) {
         Member member = memberService.getById(securityUser.getId());
 
-        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "현재 회원 정보입니다.", new MemberDto(member)));
+        String presignedUrl = s3Uploader.generatePresignedUrl(member.getProfileImgUrl());
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "현재 회원 정보입니다.", new MemberDto(member, presignedUrl)));
     }
 
     @PatchMapping("/me")
@@ -87,7 +91,8 @@ public class MemberController implements MemberApi{
     ) {
         Member member = memberService.updateMember(securityUser.getId(), reqBody, profileImage);
 
-        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "회원 정보가 수정되었습니다.", new MemberDto(member)));
+        String presignedUrl = s3Uploader.generatePresignedUrl(member.getProfileImgUrl());
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "회원 정보가 수정되었습니다.", new MemberDto(member, presignedUrl)));
     }
 
     @GetMapping("/{id}")

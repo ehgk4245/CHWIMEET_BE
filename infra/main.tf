@@ -191,6 +191,9 @@ echo "SPRING__MAIL__HOST=${var.mail_host}" >> /etc/environment
 echo "SPRING__MAIL__PORT=${var.mail_port}" >> /etc/environment
 echo "SPRING__MAIL__USERNAME=${var.mail_username}" >> /etc/environment
 echo "SPRING__MAIL__PASSWORD=${var.mail_password}" >> /etc/environment
+echo "SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_ID=${var.kakao_client_id}" >> /etc/environment
+echo "SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_SECRET=${var.kakao_client_secret}" >> /etc/environment
+echo "SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__REDIRECT_URI=${var.kakao_redirect_uri}" >> /etc/environment
 source /etc/environment
 
 # 도커 설치 및 실행/활성화
@@ -281,6 +284,9 @@ SPRING__MAIL__HOST=${var.mail_host}
 SPRING__MAIL__PORT=${var.mail_port}
 SPRING__MAIL__USERNAME=${var.mail_username}
 SPRING__MAIL__PASSWORD=${var.mail_password}
+SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_ID=${var.kakao_client_id}
+SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_SECRET=${var.kakao_client_secret}
+SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__REDIRECT_URI=${var.kakao_redirect_uri}
 ENV_EOF
 
 # docker-compose.yml 생성 (컨테이너 이름은 team1-app-001/002 유지)
@@ -312,7 +318,9 @@ services:
       - SPRING__MAIL__PORT=$${SPRING__MAIL__PORT}
       - SPRING__MAIL__USERNAME=$${SPRING__MAIL__USERNAME}
       - SPRING__MAIL__PASSWORD=$${SPRING__MAIL__PASSWORD}
-
+      - SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_ID=$${SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_ID}
+      - SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_SECRET=$${SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_SECRET}
+      - SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__REDIRECT_URI=$${SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__REDIRECT_URI}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -344,6 +352,9 @@ services:
       - SPRING__MAIL__PORT=$${SPRING__MAIL__PORT}
       - SPRING__MAIL__USERNAME=$${SPRING__MAIL__USERNAME}
       - SPRING__MAIL__PASSWORD=$${SPRING__MAIL__PASSWORD}
+      - SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_ID=$${SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_ID}
+      - SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_SECRET=$${SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__CLIENT_SECRET}
+      - SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__REDIRECT_URI=$${SPRING__SECURITY__OAUTH2__CLIENT__REGISTRATION__KAKAO__REDIRECT_URI}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

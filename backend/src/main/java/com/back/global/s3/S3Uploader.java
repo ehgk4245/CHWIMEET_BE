@@ -77,6 +77,9 @@ public class S3Uploader {
     }
 
     public String generatePresignedUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return null;
+        }
         String key = extractKey(fileUrl);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()

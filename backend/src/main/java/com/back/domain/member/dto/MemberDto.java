@@ -17,7 +17,7 @@ public record MemberDto(
         String role,
         boolean isBanned
 ) {
-    public MemberDto(Member member) {
+    public MemberDto(Member member, String profileImgUrl) {
         this(
                 member.getId(),
                 member.getEmail(),
@@ -26,7 +26,7 @@ public record MemberDto(
                 member.getPhoneNumber(),
                 member.getAddress1(),
                 member.getAddress2(),
-                member.getProfileImgUrl(),
+                profileImgUrl,
                 member.getCreatedAt(),
                 member.getRole().name(),
                 member.isBanned()
