@@ -8,7 +8,7 @@ public record PostBannedResBody(
         Long id,
         String title,
         String content,
-        String authorName,
+        Long authorId,
         LocalDateTime createdAt,
         LocalDateTime modifiedAt,
         Boolean isBanned
@@ -18,7 +18,7 @@ public record PostBannedResBody(
                 post.getId(),
                 post.getTitle(),
                 post.getContent(),
-                post.getAuthor().getName(),
+                post.getAuthor().getId(),
                 post.getCreatedAt(),
                 post.getModifiedAt(),
                 post.getIsBanned()

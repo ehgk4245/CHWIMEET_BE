@@ -316,6 +316,7 @@ public class PostService {
         return postQueryRepository.findReservedDatesFromToday(id);
     }
 
+    @Transactional
     public PostBannedResBody banPost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(
@@ -326,7 +327,7 @@ public class PostService {
         return PostBannedResBody.of(post);
     }
 
-
+    @Transactional
     public PostBannedResBody unbanPost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(

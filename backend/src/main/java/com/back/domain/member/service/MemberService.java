@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
@@ -80,6 +81,7 @@ public class MemberService {
         return memberRepository.existsByNickname(nickname);
     }
 
+    @Transactional
     public MemberDto banMember(Long memberId) {
         Member member = getById(memberId);
         member.ban();
@@ -87,6 +89,7 @@ public class MemberService {
         return new MemberDto(member);
     }
 
+    @Transactional
     public MemberDto unbanMember(Long id) {
         Member member = getById(id);
         member.unban();
