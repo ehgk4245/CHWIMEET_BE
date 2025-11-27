@@ -27,7 +27,6 @@ public class ReservationController implements ReservationApi {
     private final ReservationService reservationService;
     private final MemberService memberService;
 
-    @Transactional
     @PostMapping
     public ResponseEntity<RsData<ReservationDto>> createReservation(
             @Valid @RequestBody CreateReservationReqBody ReqBody,
@@ -40,7 +39,6 @@ public class ReservationController implements ReservationApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(new RsData<>(HttpStatus.CREATED, "%d번 예약이 생성되었습니다".formatted(reservationDto.id()), reservationDto));
     }
 
-    @Transactional(readOnly = true)
     @GetMapping("/sent")
     public ResponseEntity<RsData<PagePayload<GuestReservationSummaryResBody>>> getSentReservations(
             @AuthenticationPrincipal SecurityUser securityUser,
@@ -57,7 +55,6 @@ public class ReservationController implements ReservationApi {
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "%d번 게스트가 등록한 예약 목록입니다.".formatted(author.getId()), reservations));
     }
 
-    @Transactional(readOnly = true)
     @GetMapping("/received/{postId}")
     public ResponseEntity<RsData<PagePayload<HostReservationSummaryResBody>>> getReceivedReservations(
             @AuthenticationPrincipal SecurityUser securityUser,
@@ -73,7 +70,6 @@ public class ReservationController implements ReservationApi {
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "%d번 게시글에 대한 예약 목록입니다.".formatted(postId), reservations));
     }
 
-    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public ResponseEntity<RsData<ReservationDto>> getReservationDetail(
             @PathVariable Long id,
@@ -83,7 +79,6 @@ public class ReservationController implements ReservationApi {
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "%d번 예약 상세 정보입니다.".formatted(id), reservationDto));
     }
 
-    @Transactional
     @PatchMapping("/{id}/status")
     public ResponseEntity<RsData<ReservationDto>> updateReservationStatus(
             @PathVariable Long id,
@@ -93,7 +88,6 @@ public class ReservationController implements ReservationApi {
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "%d번 예약 상태가 업데이트 되었습니다.".formatted(id), reservationDto));
     }
 
-    @Transactional
     @PutMapping("/{id}")
     public ResponseEntity<RsData<ReservationDto>> updateReservation(
             @PathVariable Long id,

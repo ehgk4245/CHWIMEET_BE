@@ -53,6 +53,7 @@ public class ReservationService {
     private final ReservationRemindScheduler reminderScheduler;
     private final NotificationService notificationService;
 
+    @Transactional
     public ReservationDto create(CreateReservationReqBody reqBody, Member author) {
         Post post = postService.getById(reqBody.postId());
 
@@ -183,6 +184,7 @@ public class ReservationService {
         return options;
     }
 
+    @Transactional(readOnly = true)
     public PagePayload<GuestReservationSummaryResBody> getSentReservations(
             Member author,
             Pageable pageable,
@@ -280,6 +282,7 @@ public class ReservationService {
         );
     }
 
+    @Transactional(readOnly = true)
     public PagePayload<HostReservationSummaryResBody> getReceivedReservations(
             Long postId,
             Member member,
@@ -321,6 +324,7 @@ public class ReservationService {
         return PageUt.of(reservationSummaryDtoPage);
     }
 
+    @Transactional(readOnly = true)
     public ReservationDto getReservationDtoById(Long reservationId, Long memberId) {
         Reservation reservation = reservationQueryRepository.findByIdWithAll(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
@@ -334,6 +338,7 @@ public class ReservationService {
         return convertToReservationDto(reservation);
     }
 
+    @Transactional
     public ReservationDto updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
         Reservation reservation = reservationQueryRepository.findByIdWithPostAndAuthor(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
@@ -442,6 +447,7 @@ public class ReservationService {
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
     }
 
+    @Transactional
     public ReservationDto updateReservation(Long reservationId, Long memberId, UpdateReservationReqBody reqBody) {
         Reservation reservation = reservationQueryRepository.findByIdWithAll(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
