@@ -145,7 +145,11 @@ jooq {
 }
 
 tasks.named("compileJava") {
-    dependsOn("generateJooq")
+    mustRunAfter("generateJooq")
+}
+
+tasks.named("compileTestJava") {
+    mustRunAfter("generateJooq")
 }
 
 // ✅ JaCoCo 버전을 Java 25를 지원하는 최신 버전으로 업데이트
