@@ -4,6 +4,8 @@ import com.back.config.TestConfig;
 import com.back.domain.category.entity.Category;
 import com.back.domain.category.repository.CategoryRepository;
 import com.back.domain.chat.dto.CreateChatRoomReqBody;
+import com.back.domain.chat.repository.ChatMemberRepository;
+import com.back.domain.chat.repository.ChatMessageRepository;
 import com.back.domain.chat.repository.ChatRoomRepository;
 import com.back.domain.chat.service.ChatService;
 import com.back.domain.member.entity.Member;
@@ -59,6 +61,12 @@ class ChatControllerTest {
     private ChatRoomRepository chatRoomRepository;
 
     @Autowired
+    private ChatMemberRepository chatMemberRepository;
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
+
+    @Autowired
     private CategoryRepository categoryRepository;
 
     @Autowired
@@ -74,6 +82,8 @@ class ChatControllerTest {
 
     @BeforeEach
     void setUp() {
+        chatMessageRepository.deleteAll();
+        chatMemberRepository.deleteAll();
         chatRoomRepository.deleteAll();
         postRepository.deleteAll();
         memberRepository.deleteAll();
