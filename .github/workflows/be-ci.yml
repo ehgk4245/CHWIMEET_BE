@@ -113,27 +113,47 @@ jobs:
           ./gradlew bootRun --no-daemon > bootrun.log 2>&1 &
           BOOT_PID=$!
           
-          # 애플리케이션이 시작될 때까지 대기 (최대 60초)
+          # 애플리케이션이 시작될 때까지 대기 (최대 120초)
           echo "Waiting for Spring Boot to start..."
-          for i in {1..30}; do
-            if grep -q "Started BackApplication" bootrun.log 2>/dev/null; then
-              echo "✅ Spring Boot started successfully"
+          STARTED=false
+          for i in {1..60}; do
+            if grep -q "Started" bootrun.log 2>/dev/null; then
+              echo "✅ Spring Boot started at iteration $i"
+              STARTED=true
+              sleep 10  # DDL 실행 완료를 위한 추가 대기
               break
             fi
-            echo "Waiting... ($i/30)"
+            echo "Waiting... ($i/60)"
             sleep 2
           done
           
+          # 타임아웃 체크
+          if [ "$STARTED" = false ]; then
+            echo "❌ Spring Boot failed to start within 120 seconds"
+            echo "=== Boot Log (last 100 lines) ==="
+            tail -100 bootrun.log
+          fi
+          
           # 프로세스 종료
-          kill $BOOT_PID || true
+          kill $BOOT_PID 2>/dev/null || true
           wait $BOOT_PID 2>/dev/null || true
           
           # 스키마 생성 확인
           echo "=== Verifying schema ==="
-          docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -e "USE chwimeet; SHOW TABLES;" || echo "No tables found"
-          echo "✅ Schema initialized"
+          TABLES=$(docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -sN -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='chwimeet'")
+          echo "Found $TABLES tables"
+          
+          if [ "$TABLES" -gt "0" ]; then
+            echo "=== Table list ==="
+            docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -e "USE chwimeet; SHOW TABLES;"
+            echo "✅ Schema initialized with $TABLES tables"
+          else
+            echo "❌ No tables found - Schema creation failed"
+            echo "=== Full Boot Log ==="
+            cat bootrun.log
+            exit 1
+          fi
 
-        # JOOQ 생성 (환경변수 직접 전달)
       - name: Generate JOOQ sources
         env:
           SPRING__DATASOURCE__URL: jdbc:mariadb://localhost:3306/chwimeet?currentSchema=chwimeet
@@ -141,14 +161,37 @@ jobs:
           SPRING__DATASOURCE__PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           echo "=== Starting JOOQ Generation ==="
+          
+          # 먼저 테이블 확인
+          echo "=== Tables available for JOOQ ==="
+          docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -e "USE chwimeet; SHOW TABLES;"
+          
+          echo "=== Running JOOQ generation ==="
           ./gradlew generateJooq --info --stacktrace --no-daemon 2>&1 | tee jooq-generation.log
           echo "=== JOOQ Generation Complete ==="
           
+          # 결과 확인
           if [ -d "build/generated-src/jooq/main" ]; then
             echo "✅ JOOQ directory exists"
-            ls -la build/generated-src/jooq/main/com/back/jooq/tables/ || echo "No tables generated"
+          
+            # 생성된 파일 확인
+            if [ -d "build/generated-src/jooq/main/com/back/jooq/tables" ]; then
+              echo "=== Generated JOOQ tables ==="
+              ls -la build/generated-src/jooq/main/com/back/jooq/tables/ || echo "Tables directory exists but is empty"
+            else
+              echo "❌ Tables directory not found in JOOQ output"
+            fi
+          
+            # 전체 구조 확인
+            echo "=== Full JOOQ directory structure ==="
+            find build/generated-src/jooq/main -type f || echo "No files found"
           else
             echo "❌ JOOQ directory NOT found"
+            echo "=== Checking what was generated ==="
+            ls -laR build/generated-src/ 2>/dev/null || echo "generated-src directory doesn't exist"
+          
+            echo "=== JOOQ Generation Log (last 50 lines) ==="
+            tail -50 jooq-generation.log
             exit 1
           fi
 
