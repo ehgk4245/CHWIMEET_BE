@@ -1,11 +1,8 @@
 package com.back.domain.review.repository;
 
 import com.back.domain.member.entity.QMember;
-import com.back.domain.post.entity.QPost;
-import com.back.domain.reservation.entity.QReservation;
 import com.back.domain.review.dto.ReviewAuthorDto;
 import com.back.domain.review.dto.ReviewDto;
-import com.back.domain.review.entity.QReview;
 import com.back.domain.review.entity.Review;
 import com.back.global.queryDsl.CustomQuerydslRepositorySupport;
 import com.querydsl.core.types.Projections;
@@ -126,5 +123,17 @@ public class ReviewQueryRepository extends CustomQuerydslRepositorySupport {
                 .leftJoin(post.author, new QMember("postAuthor")).fetchJoin()
                 .where(review.id.in(reviewIds))
                 .fetch();
+    }
+
+    public long bulkBanReview(List<Long> reviewIds) {
+        long updatedCount = getQueryFactory()
+                .update(review)
+                .set(review.isBanned, true)
+                .where(review.id.in(reviewIds))
+                .execute();
+
+        getEntityManager().clear();
+
+        return updatedCount;
     }
 }

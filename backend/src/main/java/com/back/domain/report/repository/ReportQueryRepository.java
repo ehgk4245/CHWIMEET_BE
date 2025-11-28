@@ -10,6 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static com.back.domain.member.entity.QMember.member;
 import static com.back.domain.report.entity.QReport.report;
 
@@ -43,5 +46,14 @@ public class ReportQueryRepository extends CustomQuerydslRepositorySupport {
 
     private BooleanExpression reportTypeEq(ReportType reportType) {
         return reportType != null ? report.reportType.eq(reportType) : null;
+    }
+
+    public List<Report> findReportsWithinDays(int days) {
+        LocalDateTime startDate = LocalDateTime.now().minusDays(days);
+
+        // 최근 N일 이내 신고 조회
+        return selectFrom(report)
+                .where(report.createdAt.goe(startDate))
+                .fetch();
     }
 }

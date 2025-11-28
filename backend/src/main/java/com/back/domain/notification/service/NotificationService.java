@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -234,6 +235,13 @@ public class NotificationService {
         Map<NotificationType.GroupType, Map<Long, ?>> loaded = loadEntitiesByGroup(List.of(notification));
         List<NotificationResBody<? extends NotificationData>> bodies = mapToResBody(List.of(notification), loaded);
         return bodies.get(0);
+    }
+
+    @Transactional
+    public int deleteOldNotifications() {
+        return notificationRepository.deleteOldReadNotifications(
+                LocalDateTime.now().minusDays(3)
+        );
     }
 }
 

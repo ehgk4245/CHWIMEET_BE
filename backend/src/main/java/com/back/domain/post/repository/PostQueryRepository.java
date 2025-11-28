@@ -130,6 +130,25 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 			.sorted()
 			.collect(Collectors.toList());
 	}
+
+	/**
+	 * ID 목록을 받아 해당 게시글들을 벌크 UPDATE를 통해 '제재(banned)' 상태로 변경합니다.
+	 * @return 실제로 변경된 레코드(row) 수
+	 */
+	public long bulkBanPosts(List<Long> postIds) {
+		long updatedCount = getQueryFactory()
+				.update(post) // UPDATE Post p
+				.set(post.isBanned, true) // SET p.isBanned = true
+				.where(post.id.in(postIds)) // WHERE p.id IN (:postIds)
+				.execute(); // 쿼리 실행 및 변경된 행 개수 반환
+
+		// 필요에 따라 영속성 컨텍스트(JPA 1차 캐시) 초기화
+		// 벌크 연산은 캐시를 우회하므로, 이후 트랜잭션 내에서 최신 데이터를
+		// 조회해야 한다면 반드시 초기화해야 합니다.
+		getEntityManager().clear();
+
+		return updatedCount;
+	}
 }
 
 
