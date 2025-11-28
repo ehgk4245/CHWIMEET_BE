@@ -12,6 +12,8 @@ import com.back.domain.notification.repository.NotificationQueryRepository;
 import com.back.domain.notification.repository.NotificationRepository;
 import com.back.domain.reservation.entity.Reservation;
 import com.back.domain.reservation.repository.ReservationQueryRepository;
+import com.back.domain.review.entity.Review;
+import com.back.domain.review.repository.ReviewQueryRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
@@ -23,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,6 +39,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationQueryRepository notificationQueryRepository;
     private final ReservationQueryRepository reservationQueryRepository;
+    private final ReviewQueryRepository reviewQueryRepository;
     private final List<NotificationDataMapper<? extends NotificationData>> mappers;
     private final Map<NotificationType.GroupType, Function<List<Long>, Map<Long, ?>>> batchLoaders = new HashMap<>();
     private final SseNotificationService sseNotificationService;
@@ -45,6 +49,7 @@ public class NotificationService {
             NotificationRepository notificationRepository,
             NotificationQueryRepository notificationQueryRepository,
             ReservationQueryRepository reservationQueryRepository,
+            ReviewQueryRepository reviewQueryRepository,
             List<NotificationDataMapper<? extends NotificationData>> mappers,
             SseNotificationService sseNotificationService
     ) {
@@ -52,6 +57,7 @@ public class NotificationService {
         this.notificationRepository = notificationRepository;
         this.notificationQueryRepository = notificationQueryRepository;
         this.reservationQueryRepository = reservationQueryRepository;
+        this.reviewQueryRepository = reviewQueryRepository;
         this.mappers = mappers;
         this.sseNotificationService = sseNotificationService;
         setBatchLoaders();
@@ -61,6 +67,10 @@ public class NotificationService {
         batchLoaders.put(NotificationType.GroupType.RESERVATION, targetIds ->
                 reservationQueryRepository.findWithPostAndAuthorByIds(targetIds)
                         .stream().collect(Collectors.toMap(Reservation::getId, r -> r))
+        );
+        batchLoaders.put(NotificationType.GroupType.REVIEW, targetIds ->
+                reviewQueryRepository.findWithReservationAndPostAndAuthorsByIds(targetIds)
+                        .stream().collect(Collectors.toMap(Review::getId, r -> r))
         );
     }
 
@@ -165,6 +175,13 @@ public class NotificationService {
         Map<NotificationType.GroupType, Map<Long, ?>> loaded = loadEntitiesByGroup(List.of(notification));
         List<NotificationResBody<? extends NotificationData>> bodies = mapToResBody(List.of(notification), loaded);
         return bodies.get(0);
+    }
+
+    @Transactional
+    public int deleteOldNotifications() {
+        return notificationRepository.deleteOldReadNotifications(
+                LocalDateTime.now().minusDays(3)
+        );
     }
 }
 

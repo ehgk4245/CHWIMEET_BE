@@ -1,5 +1,6 @@
 package com.back.domain.review.repository;
 
+import com.back.domain.member.entity.QMember;
 import com.back.domain.review.dto.ReviewAuthorDto;
 import com.back.domain.review.dto.ReviewDto;
 import com.back.domain.review.entity.Review;
@@ -24,7 +25,7 @@ public class ReviewQueryRepository extends CustomQuerydslRepositorySupport {
         super(Review.class);
     }
 
-    public Page<ReviewDto> getPostReceivedReviews(Pageable pageable, Long postId){
+    public Page<ReviewDto> getPostReceivedReviews(Pageable pageable, Long postId) {
         return applyPagination(pageable,
                 contentQuery -> contentQuery
                         .select(Projections.constructor(ReviewDto.class,
@@ -56,7 +57,7 @@ public class ReviewQueryRepository extends CustomQuerydslRepositorySupport {
         );
     }
 
-    public Page<ReviewDto> getMemberReceivedReviews(Pageable pageable, Long memberId){
+    public Page<ReviewDto> getMemberReceivedReviews(Pageable pageable, Long memberId) {
         return applyPagination(pageable,
                 contentQuery -> contentQuery
                         .select(Projections.constructor(ReviewDto.class,
@@ -109,8 +110,30 @@ public class ReviewQueryRepository extends CustomQuerydslRepositorySupport {
                         .where(
                                 review.reservation.id.in(reservationIds),
                                 review.reservation.author.id.eq(authorId)
-                                )
+                        )
                         .fetch()
         );
+    }
+
+    public List<Review> findWithReservationAndPostAndAuthorsByIds(List<Long> reviewIds) {
+        return selectFrom(review)
+                .leftJoin(review.reservation, reservation).fetchJoin()
+                .leftJoin(reservation.author, new QMember("reservationAuthor")).fetchJoin()
+                .leftJoin(reservation.post, post).fetchJoin()
+                .leftJoin(post.author, new QMember("postAuthor")).fetchJoin()
+                .where(review.id.in(reviewIds))
+                .fetch();
+    }
+
+    public long bulkBanReview(List<Long> reviewIds) {
+        long updatedCount = getQueryFactory()
+                .update(review)
+                .set(review.isBanned, true)
+                .where(review.id.in(reviewIds))
+                .execute();
+
+        getEntityManager().clear();
+
+        return updatedCount;
     }
 }

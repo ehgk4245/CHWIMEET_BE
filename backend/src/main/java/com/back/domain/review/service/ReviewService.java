@@ -1,5 +1,7 @@
 package com.back.domain.review.service;
 
+import com.back.domain.notification.common.NotificationType;
+import com.back.domain.notification.service.NotificationService;
 import com.back.domain.reservation.entity.Reservation;
 import com.back.domain.reservation.repository.ReservationRepository;
 import com.back.domain.review.dto.ReviewBannedResBody;
@@ -22,6 +24,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewQueryRepository reviewQueryRepository;
     private final ReservationRepository reservationRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Review writeReview(Long reservationId, ReviewWriteReqBody reqBody, Long authorId) {
@@ -39,7 +42,11 @@ public class ReviewService {
             throw new ServiceException(HttpStatus.BAD_REQUEST, "리뷰를 작성할 수 없는 예약 상태입니다.");
         }
 
-        return reviewRepository.save(Review.create(reservation, reqBody));
+        Review review = reviewRepository.save(Review.create(reservation, reqBody));
+
+        notificationService.saveAndSendNotification(reservation.getPost().getAuthor().getId(), NotificationType.REVIEW_CREATED, review.getId());
+
+        return review;
     }
 
 
