@@ -4,7 +4,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import com.back.domain.post.common.EmbeddingStatus;
+import com.back.domain.post.dto.req.PostEmbeddingDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -42,6 +46,7 @@ import com.back.standard.util.page.PageUt;
 
 import lombok.RequiredArgsConstructor;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -53,6 +58,7 @@ public class PostService {
 	private final PostQueryRepository postQueryRepository;
 	private final PostFavoriteQueryRepository postFavoriteQueryRepository;
 	private final PostVectorService postVectorService;
+	private final PostTransactionService postTransactionService;
 	private final S3Uploader s3;
 
 	private final RegionRepository regionRepository;
@@ -121,7 +127,8 @@ public class PostService {
 
 		this.postRepository.save(post);
 
-		postVectorService.indexPost(post);
+		// 임베딩 작업 스케줄 처리
+		// postVectorService.indexPost(post);
 
 		return PostCreateResBody.of(post);
 	}
@@ -369,5 +376,62 @@ public class PostService {
 		}
 		post.unban();
 		return PostBannedResBody.of(post);
+	}
+
+	/**
+	 * 벌크 업데이트를 사용하여 효율적으로 게시글 임베딩을 처리하는 메인 배치 Job 메서드.
+	 */
+	public void embedPostsBatch() {
+		List<Post> postsToEmbed = postQueryRepository.findPostsToEmbedWithDetails();
+
+		if (postsToEmbed.isEmpty()) {
+			log.info("임베딩할 WAIT 상태의 게시글이 없습니다.");
+			return;
+		}
+
+		// ⚡️ 선점 전에 DTO로 변환 (em.clear() 후에도 안전)
+		List<PostEmbeddingDto> postDtos = postsToEmbed.stream()
+				.map(PostEmbeddingDto::from)
+				.toList();
+
+		List<Long> postIds = postDtos.stream()
+				.map(PostEmbeddingDto::id)
+				.toList();
+
+		long updatedCount = postTransactionService.updateStatusToPending(postIds);
+
+		if (updatedCount == 0) {
+			log.warn("선점 시도했으나 업데이트된 게시글이 0건입니다.");
+			return;
+		}
+
+		log.info("총 {}개의 게시글을 PENDING 상태로 선점했습니다.", updatedCount);
+
+		List<Long> successIds = new ArrayList<>();
+		List<Long> failedIds = new ArrayList<>();
+
+		for (PostEmbeddingDto dto : postDtos) {
+			try {
+				log.info(">>> 임베딩 시작: Post ID {}", dto.id());
+				postVectorService.indexPost(dto);
+				log.info(">>> 임베딩 성공: Post ID {}", dto.id());
+				successIds.add(dto.id());
+			} catch (Exception e) {
+				log.error(">>> 임베딩 실패: Post ID {}", dto.id(), e);
+				failedIds.add(dto.id());
+			}
+		}
+
+		if (!successIds.isEmpty()) {
+			postTransactionService.updateStatusToDone(successIds);
+			log.info("성공적으로 임베딩된 게시글 {}건을 DONE으로 변경했습니다.", successIds.size());
+		}
+
+		if (!failedIds.isEmpty()) {
+			postTransactionService.updateStatusToWait(failedIds);
+			log.warn("임베딩에 실패한 게시글 {}건을 WAIT으로 복구하여 재시도를 준비합니다.", failedIds.size());
+		}
+
+		log.info("Embedding batch finished.");
 	}
 }

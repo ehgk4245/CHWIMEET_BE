@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.back.domain.post.common.EmbeddingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -146,6 +147,35 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 		// 벌크 연산은 캐시를 우회하므로, 이후 트랜잭션 내에서 최신 데이터를
 		// 조회해야 한다면 반드시 초기화해야 합니다.
 		getEntityManager().clear();
+
+		return updatedCount;
+	}
+
+	public List<Post> findPostsToEmbedWithDetails() {
+		return selectFrom(post)
+				.join(post.category).fetchJoin()
+				.join(post.author).fetchJoin()
+				.leftJoin(post.postRegions).fetchJoin()
+				.where(post.embeddingStatus.eq(EmbeddingStatus.WAIT))
+				.fetch();
+	}
+
+	public long bulkUpdateStatus(List<Long> postIds, EmbeddingStatus toStatus, EmbeddingStatus fromStatus) {
+		if (postIds == null || postIds.isEmpty()) {
+			return 0;
+		}
+
+		long updatedCount = getQueryFactory() // CustomQuerydslRepositorySupport의 메서드 사용
+				.update(post) // UPDATE Post p
+				.set(post.embeddingStatus, toStatus) // SET p.embeddingStatus = :toStatus
+				.where(
+						post.id.in(postIds), // WHERE p.id IN (:postIds)
+						post.embeddingStatus.eq(fromStatus) // AND p.embeddingStatus = :fromStatus
+				)
+				.execute(); // 쿼리 실행
+
+		// 벌크 연산 후, 영속성 컨텍스트(1차 캐시)의 데이터가 DB와 불일치하므로 반드시 초기화
+		getEntityManager().clear(); // CustomQuerydslRepositorySupport의 메서드 사용
 
 		return updatedCount;
 	}

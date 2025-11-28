@@ -99,7 +99,7 @@ class ChatControllerTest {
         Category category = Category.create("노트북", null);
         categoryRepository.save(category);
 
-        post1 = postRepository.save(new Post(
+        post1 = postRepository.save(Post.of(
                 "캠핑 텐트 대여",
                 "4인용 텐트입니다.",
                 ReceiveMethod.DELIVERY,
@@ -108,15 +108,11 @@ class ChatControllerTest {
                 null,
                 10000,
                 5000,
-                false,
                 member2,
-                new ArrayList<>(),   // options
-                new ArrayList<>(),   // images
-                new ArrayList<>(),   // postRegions
                 category
         ));
 
-        post2 = postRepository.save(new Post(
+        post2 = postRepository.save(Post.of(
                 "노트북 대여합니다",
                 "맥북 프로입니다.",
                 ReceiveMethod.DIRECT,
@@ -125,15 +121,11 @@ class ChatControllerTest {
                 null,
                 50000,
                 20000,
-                false,
                 member3,
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new ArrayList<>(),
                 category
         ));
 
-        post3 = postRepository.save(new Post(
+        post3 = postRepository.save(Post.of(
                 "카메라 렌탈",
                 "소니 A7III입니다.",
                 ReceiveMethod.ANY,
@@ -142,11 +134,7 @@ class ChatControllerTest {
                 null,
                 30000,
                 15000,
-                false,
                 member4,
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new ArrayList<>(),
                 category
         ));
 

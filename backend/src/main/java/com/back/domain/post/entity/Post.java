@@ -2,6 +2,7 @@ package com.back.domain.post.entity;
 
 import com.back.domain.category.entity.Category;
 import com.back.domain.member.entity.Member;
+import com.back.domain.post.common.EmbeddingStatus;
 import com.back.domain.post.common.ReceiveMethod;
 import com.back.domain.post.common.ReturnMethod;
 import com.back.global.jpa.entity.BaseEntity;
@@ -40,6 +41,10 @@ public class Post extends BaseEntity {
     private Integer fee;
 
     private Boolean isBanned = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EmbeddingStatus embeddingStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
@@ -86,6 +91,7 @@ public class Post extends BaseEntity {
         post.author = author;
         post.category = category;
         post.isBanned = false;
+        post.embeddingStatus = EmbeddingStatus.WAIT;
         return post;
     }
 
@@ -137,5 +143,17 @@ public class Post extends BaseEntity {
 
     public void unban() {
         this.isBanned = false;
+    }
+
+    public void pendingEmbedding() {
+        this.embeddingStatus = EmbeddingStatus.PENDING;
+    }
+
+    public void doneEmbedding() {
+        this.embeddingStatus = EmbeddingStatus.DONE;
+    }
+
+    public void waitEmbedding() {
+        this.embeddingStatus = EmbeddingStatus.WAIT;
     }
 }
