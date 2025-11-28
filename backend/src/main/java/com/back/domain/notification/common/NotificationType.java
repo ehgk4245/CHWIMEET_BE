@@ -4,7 +4,7 @@ import com.back.domain.reservation.common.ReservationStatus;
 
 public enum NotificationType {
 
-    // 상태 변경 알림
+    // 예약 알림
     RESERVATION_PENDING_APPROVAL(GroupType.RESERVATION),      // 예약 : 승인 대기
     RESERVATION_PENDING_PAYMENT(GroupType.RESERVATION),       // 예약 : 결제 대기
     RESERVATION_PENDING_PICKUP(GroupType.RESERVATION),        // 예약 : 수령 대기
@@ -22,6 +22,9 @@ public enum NotificationType {
     RESERVATION_CLAIM_COMPLETED(GroupType.RESERVATION),       // 예약 : 청구 완료
     RESERVATION_REJECTED(GroupType.RESERVATION),              // 예약 : 승인 거절
     RESERVATION_CANCELLED(GroupType.RESERVATION),             // 예약 : 예약 취소
+
+    // 리뷰 알림
+    REVIEW_CREATED(GroupType.REVIEW), // 리뷰 등록
 
     // 리마인드 알림
     REMIND_RETURN_DUE(GroupType.RESERVATION);
@@ -43,5 +46,6 @@ public enum NotificationType {
 
     public enum GroupType {
         RESERVATION,
+        REVIEW
     }
 }
