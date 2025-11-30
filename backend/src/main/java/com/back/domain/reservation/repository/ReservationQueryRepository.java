@@ -186,6 +186,18 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
                 )
                 .groupBy(category.id, category.name)
                 .orderBy(reservation.count().desc(), post.fee.sum().desc())
+    }
+    
+    public List<Reservation> findWithPostAndAuthorByStatus(ReservationStatus status) {
+        return select(reservation)
+                .from(reservation)
+                .leftJoin(reservation.author, new QMember("reservationAuthor"))
+                .fetchJoin()
+                .leftJoin(reservation.post, post)
+                .fetchJoin()
+                .leftJoin(post.author, new QMember("postAuthor"))
+                .fetchJoin()
+                .where(reservation.status.eq(status))
                 .fetch();
     }
 

@@ -4,6 +4,7 @@ import com.back.domain.notification.common.NotificationData;
 import com.back.domain.notification.dto.NotificationResBody;
 import com.back.domain.notification.dto.NotificationUnreadResBody;
 import com.back.domain.notification.service.NotificationService;
+import com.back.domain.notification.service.SseNotificationService;
 import com.back.global.rsData.RsData;
 import com.back.global.security.SecurityUser;
 import com.back.standard.util.page.PagePayload;
@@ -24,10 +25,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController implements NotificationApi {
 
     private final NotificationService notificationService;
+    private final SseNotificationService sseNotificationService;
 
     @GetMapping("/subscribe")
     public SseEmitter subscribe(@AuthenticationPrincipal SecurityUser securityUser) {
-        return notificationService.subscribe(securityUser.getId());
+        return sseNotificationService.subscribe(securityUser.getId());
     }
 
     @GetMapping

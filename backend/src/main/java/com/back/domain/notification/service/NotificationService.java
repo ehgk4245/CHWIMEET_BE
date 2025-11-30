@@ -15,7 +15,6 @@ import com.back.domain.reservation.repository.ReservationQueryRepository;
 import com.back.domain.review.entity.Review;
 import com.back.domain.review.repository.ReviewQueryRepository;
 import com.back.global.exception.ServiceException;
-import com.back.global.sse.EmitterRepository;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -45,8 +42,7 @@ public class NotificationService {
     private final ReviewQueryRepository reviewQueryRepository;
     private final List<NotificationDataMapper<? extends NotificationData>> mappers;
     private final Map<NotificationType.GroupType, Function<List<Long>, Map<Long, ?>>> batchLoaders = new HashMap<>();
-    private final EmitterRepository emitterRepository;
-    private static final Long TIMEOUT = 60L * 1000 * 60; // 1시간
+    private final SseNotificationService sseNotificationService;
 
     public NotificationService(
             MemberRepository memberRepository,
@@ -55,7 +51,7 @@ public class NotificationService {
             ReservationQueryRepository reservationQueryRepository,
             ReviewQueryRepository reviewQueryRepository,
             List<NotificationDataMapper<? extends NotificationData>> mappers,
-            EmitterRepository emitterRepository
+            SseNotificationService sseNotificationService
     ) {
         this.memberRepository = memberRepository;
         this.notificationRepository = notificationRepository;
@@ -63,7 +59,7 @@ public class NotificationService {
         this.reservationQueryRepository = reservationQueryRepository;
         this.reviewQueryRepository = reviewQueryRepository;
         this.mappers = mappers;
-        this.emitterRepository = emitterRepository;
+        this.sseNotificationService = sseNotificationService;
         setBatchLoaders();
     }
 
@@ -78,39 +74,6 @@ public class NotificationService {
         );
     }
 
-    public SseEmitter subscribe(Long memberId) {
-        String emitterId = memberId + "_" + System.currentTimeMillis();
-        SseEmitter emitter = createAndSaveEmitter(memberId, emitterId);
-
-        sendInitialEvent(memberId, emitterId, emitter);
-        registerEmitterCallbacks(memberId, emitterId, emitter);
-
-        return emitter;
-    }
-
-    private SseEmitter createAndSaveEmitter(Long memberId, String emitterId) {
-        SseEmitter emitter = new SseEmitter(TIMEOUT);
-        emitterRepository.save(memberId, emitterId, emitter);
-        return emitter;
-    }
-
-    private void sendInitialEvent(Long memberId, String emitterId, SseEmitter emitter) {
-        try {
-            emitter.send(SseEmitter.event()
-                    .id(emitterId)
-                    .data("connected"));
-        } catch (Exception e) {
-            log.error("SSE 발행 중 예외 발생: memberId={}, emitterId={}, error={}",
-                    memberId, emitterId, e.getMessage(), e);
-        }
-    }
-
-    private void registerEmitterCallbacks(Long memberId, String emitterId, SseEmitter emitter) {
-        emitter.onCompletion(() -> emitterRepository.deleteEmitter(memberId, emitterId));
-        emitter.onTimeout(() -> emitterRepository.deleteEmitter(memberId, emitterId));
-        emitter.onError(e -> emitterRepository.deleteEmitter(memberId, emitterId));
-    }
-
     @Transactional
     public void saveAndSendNotification(Long targetMemberId, NotificationType type, Long targetId) {
         Member member = memberRepository.findById(targetMemberId)
@@ -122,30 +85,7 @@ public class NotificationService {
 
         NotificationResBody<?> dto = EntityToResBody(saved);
 
-        sendNotification(targetMemberId, dto);
-    }
-
-    private void sendNotification(Long targetMemberId, NotificationResBody<? extends NotificationData> message) {
-        Map<String, SseEmitter> emitters = emitterRepository.findEmittersByMemberId(targetMemberId);
-
-        emitters.forEach((emitterId, emitter) -> {
-            try {
-                emitter.send(SseEmitter.event()
-                        .id(emitterId)
-                        .data(message));
-                log.debug("알림 전송 성공: memberId={}, emitterId={}", targetMemberId, emitterId);
-            } catch (IOException e) {
-                // 클라이언트 연결 끊김 - 정상적인 상황
-                log.debug("클라이언트 연결 끊김 감지 (memberId={}, emitterId={}): {}",
-                        targetMemberId, emitterId, e.getMessage());
-                emitterRepository.deleteEmitter(targetMemberId, emitterId);
-            } catch (Exception e) {
-                // 기타 예외 - 예상치 못한 에러
-                log.error("알림 전송 중 예외 발생 (memberId={}, emitterId={})",
-                        targetMemberId, emitterId, e);
-                emitterRepository.deleteEmitter(targetMemberId, emitterId);
-            }
-        });
+        sseNotificationService.sendNotification(targetMemberId, dto);
     }
 
     public NotificationUnreadResBody hasUnread(Long memberId) {
