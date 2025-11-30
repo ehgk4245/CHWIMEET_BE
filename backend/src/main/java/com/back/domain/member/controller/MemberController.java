@@ -131,7 +131,7 @@ public class MemberController implements MemberApi{
 
     @GetMapping("/{id}/reviews/summary")
     public ResponseEntity<RsData<String>> summarizeReviews(@PathVariable Long id) {
-        String body = reviewSummaryService.summarizePostReviews(id);
+        String body = reviewSummaryService.summarizeMemberReviews(id);
 
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, HttpStatus.OK.name(), body));
     }
