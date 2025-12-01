@@ -31,7 +31,10 @@ public class PostSearchService {
 	private final S3Uploader s3;
 
 	@Value("${custom.ai.rag-llm-answer-prompt}")
-	private String ragPrompt;
+	private String answerPrompt;
+
+	@Value("${custom.ai.rag-llm-rerank-prompt}")
+	private String rerankPrompt;
 
 	@Transactional(readOnly = true)
 	public List<PostListResBody> searchPosts(String query, Long memberId) {
@@ -98,24 +101,11 @@ public class PostSearchService {
 			))
 			.collect(Collectors.joining("\n\n"));
 
-		String prompt = """
-			다음은 벡터 검색으로 찾은 후보 게시글들이야.
-			
-			%s
-			
-			사용자 질문: "%s"
-			
-			위 후보군 중 질문과 가장 관련 있는 게시글을 0~3개 골라줘.
-			관련도가 낮은 건 선택 안해도돼.
-			반드시 JSON 배열 형태로만 반환해줘.
-			예시: [21, 5] 또는 [] 또는 [20]
-			
-			설명은 절대 하지 마.
-			""".formatted(context, query);
+		String prompt = rerankPrompt.formatted(context, query);
 
 		String raw = chatClient.prompt(prompt)
 			.options(ChatOptions.builder()
-				.model("gpt-4o-mini")
+				.model("gpt-4.1-mini")
 				.temperature(1.0)
 				.build())
 			.call()
@@ -163,20 +153,11 @@ public class PostSearchService {
 			))
 			.collect(Collectors.joining("\n\n"));
 
-		String prompt = """
-			%s
-			
-			---------------------
-			[사용자 질문]
-			%s
-			
-			[추천된 게시글 정보]
-			%s
-			""".formatted(ragPrompt, query, context);
+		String prompt = answerPrompt.formatted(query, context);
 
 		return chatClient.prompt(prompt)
 			.options(ChatOptions.builder()
-				.model("gpt-4.1-mini")
+				.model("gpt-5.1")
 				.temperature(1.0)
 				.build())
 			.call()
