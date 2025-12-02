@@ -286,7 +286,10 @@ public class PostService {
 
 		post.resetPostImages(processPostImage(post, reqBody, images));
 
-		postVectorService.indexPost(post);
+		// 기존 임베딩 데이터 삭제
+		postVectorService.deletePost(postId);
+		// 수정된 게시글은 다시 임베딩 대기 상태로 변경
+		post.updateEmbeddingStatusWait();
 	}
 
 	private List<PostImage> processPostImage(
