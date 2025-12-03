@@ -12,7 +12,7 @@ public record PostAuthorDto(
         return new PostAuthorDto(
                 member.getId(),
                 member.getNickname(),
-                member.getProfileImgUrl()
+                profileImgUrl
         );
     }
 }
