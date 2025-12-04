@@ -172,7 +172,7 @@ public class ReservationService {
 
         // 유효성 검증: 개수 일치 확인
         if (options.size() != optionIds.size()) {
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "선택된 옵션 중 유효하지 않은 옵션이 포함되어 있습니다."); // 400-3, 400-4와 충돌되지 않도록 코드 변경
+            throw new ServiceException(HttpStatus.BAD_REQUEST, "선택된 옵션 중 유효하지 않은 옵션이 포함되어 있습니다.");
         }
 
         // 해당 게시글의 옵션인지 검증
@@ -180,7 +180,7 @@ public class ReservationService {
                 .allMatch(option -> option.getPost().getId().equals(postId));
 
         if (!allBelongToPost) {
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "선택된 옵션은 해당 게시글의 옵션이 아닙니다."); // 400-3, 400-4와 충돌되지 않도록 코드 변경
+            throw new ServiceException(HttpStatus.BAD_REQUEST, "선택된 옵션은 해당 게시글의 옵션이 아닙니다.");
         }
 
         return options;
@@ -195,15 +195,13 @@ public class ReservationService {
 
         Page<Reservation> reservationPage = reservationQueryRepository.findByAuthorWithFetch(author, status, keyword, pageable);
 
-        // 1. 페이지에 포함된 모든 예약 ID를 추출 (단 1회 실행)
         List<Long> reservationIds = reservationPage.getContent().stream()
                 .map(Reservation::getId)
                 .toList();
 
-        // 2. 추출된 ID 목록을 사용하여 리뷰가 작성된 ID Set을 DB에서 조회 (단 1회 실행)
+        // 추출된 ID 목록을 사용하여 리뷰가 작성된 ID Set을 DB에서 조회
         Set<Long> reviewedReservationIds = reviewQueryRepository.findReviewedReservationIds(reservationIds, author.getId());
 
-        // 이제 Lazy Loading 없이 바로 접근 가능
         Page<GuestReservationSummaryResBody> reservationSummaryDtoPage = reservationPage.map(reservation -> {
             Post post = reservation.getPost();
             List<ReservationOption> options = reservation.getReservationOptions();
@@ -218,7 +216,7 @@ public class ReservationService {
                     ))
                     .toList();
 
-            // 3. Set에 해당 예약 ID가 포함되어 있는지 확인하여 hasReview 설정
+            // Set에 해당 예약 ID가 포함되어 있는지 확인하여 hasReview 설정
             boolean hasReview = reviewedReservationIds.contains(reservation.getId());
 
             return new GuestReservationSummaryResBody(
@@ -244,7 +242,7 @@ public class ReservationService {
         int baseDeposit = post.getDeposit();
         int baseFee = post.getFee();
 
-        // 옵션 가격 합산 (PostOption을 타고 들어가서 조회)
+        // 옵션 가격 합산
         int optionDepositSum = options.stream()
                 .mapToInt(ro -> ro.getPostOption().getDeposit())
                 .sum();
@@ -518,16 +516,16 @@ public class ReservationService {
                 ))
                 .toList();
 
-        // 1. 로그 전체 조회 (reservation 하나 기준이니까 N+1 아님)
+        // 로그 전체 조회 (reservation 하나 기준이니까 N+1 아님)
         List<ReservationLog> logs = reservationLogRepository.findByReservation(reservation);
 
-        // 2. authorId 한 번에 모으기
+        // authorId 한 번에 모으기
         Set<Long> authorIds = logs.stream()
                 .map(ReservationLog::getAuthorId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // 3. authorIds로 Member 한 번에 조회
+        // authorIds로 Member 한 번에 조회
         Map<Long, String> authorNicknameMap = authorIds.isEmpty()
                 ? Collections.emptyMap()
                 : memberRepository.findAllById(authorIds)
@@ -538,7 +536,7 @@ public class ReservationService {
                 ));
 
 
-        // 4. 로그 DTO로 변환하면서 authorName 매핑
+        // 로그 DTO로 변환하면서 authorName 매핑
         List<ReservationLogDto> logDtos = logs.stream()
                 .map(log -> {
                     String authorNickname = authorNicknameMap.get(log.getAuthorId());

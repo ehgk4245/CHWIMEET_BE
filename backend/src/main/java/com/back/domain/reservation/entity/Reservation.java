@@ -200,10 +200,6 @@ public class Reservation extends BaseEntity {
         }
     }
 
-    public boolean canTransitionTo(ReservationStatus newStatus) {
-        return this.status.canTransitionTo(newStatus);
-    }
-
     public boolean isModifiable() {
         return this.status == ReservationStatus.PENDING_APPROVAL;
     }

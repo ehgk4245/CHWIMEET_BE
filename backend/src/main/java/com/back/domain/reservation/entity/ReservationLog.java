@@ -19,5 +19,6 @@ public class ReservationLog extends BaseEntity {
     @JoinColumn(name = "reservation_id", nullable = false)
     private Reservation reservation;
 
+    @Column(name = "author_id", nullable = false)
     private Long authorId;
 }

@@ -32,8 +32,7 @@ import static com.back.domain.reservation.entity.QReservation.reservation;
 import static com.back.domain.reservation.entity.QReservationOption.reservationOption;
 
 @Repository
-public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
-        implements ReservationRepositoryCustom {
+public class ReservationQueryRepository extends CustomQuerydslRepositorySupport{
 
     // 종료된 상태 목록
     private static final List<ReservationStatus> TERMINATED_STATUSES = List.of(
@@ -47,7 +46,6 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         super(Reservation.class);
     }
 
-    @Override
     public boolean existsOverlappingReservation(
             Long postId,
             LocalDateTime startAt,
@@ -67,7 +65,6 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         return result != null;
     }
 
-    @Override
     public boolean existsActiveReservation(Long postId, Long authorId) {
         Long result = select(reservation.id)
                 .from(reservation)
@@ -81,7 +78,6 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         return result != null;
     }
 
-    @Override
     public Optional<Reservation> findByIdWithAll(Long id) {
         Reservation result = selectFrom(reservation)
                 .leftJoin(reservation.post, post).fetchJoin()
@@ -94,7 +90,6 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         return Optional.ofNullable(result);
     }
 
-    @Override
     public Optional<Reservation> findByIdWithPostAndAuthor(Long id) {
         QMember guest = new QMember("guest");      // ← 게스트용 별칭
         QMember host = new QMember("host");        // ← 호스트용 별칭
@@ -109,7 +104,6 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         return Optional.ofNullable(result);
     }
 
-    @Override
     public Page<Reservation> findByAuthorWithFetch(
             Member author,
             List<ReservationStatus> status,
@@ -139,7 +133,6 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
         );
     }
 
-    @Override
     public Page<Reservation> findByPostWithFetch(
             Post post,
             ReservationStatus status,
