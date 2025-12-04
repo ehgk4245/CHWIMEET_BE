@@ -1,6 +1,8 @@
 package com.back.domain.notification.controller;
 
 import com.back.config.TestConfig;
+import com.back.domain.notification.entity.Notification;
+import com.back.domain.notification.repository.NotificationRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ActiveProfiles("test")
@@ -34,6 +40,9 @@ class NotificationControllerTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    NotificationRepository notificationRepository;
 
     @Test
     @DisplayName("SSE 구독 연결 - 상태 코드 및 ContentType 확인")
@@ -66,5 +75,21 @@ class NotificationControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.msg").value("읽지 않은 알림 존재 여부"))
                 .andExpect(jsonPath("$.data.hasUnread").isBoolean());
+    }
+
+    @Test
+    @DisplayName("모든 알림 읽음 처리")
+    @WithUserDetails(value = "user1@example.com")
+    void updateAllToRead_shouldMarkAllAsRead() throws Exception {
+
+        List<Notification> before = notificationRepository.findByMemberId(1L);
+        assertThat(before).extracting("isRead").containsExactly(false, false, true, false, false, false);
+
+        mockMvc.perform(post("/api/v1/notifications"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+
+        List<Notification> after = notificationRepository.findByMemberId(1L);
+        assertThat(after).extracting("isRead").containsExactly(true, true, true, true, true, true);
     }
 }
