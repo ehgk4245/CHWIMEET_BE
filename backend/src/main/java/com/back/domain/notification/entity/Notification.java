@@ -11,13 +11,17 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "notification")
 public class Notification extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
     private NotificationType type;
 
+    @Column(name = "target_id", nullable = true)
     private Long targetId;
 
+    @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
