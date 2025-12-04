@@ -31,34 +31,37 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Post extends BaseEntity {
-	@Column(nullable = false)
+	@Column(name = "title", nullable = false)
 	private String title;
 
-	@Column(columnDefinition = "TEXT", nullable = false)
+	@Column(name = "content", columnDefinition = "TEXT", nullable = false)
 	private String content;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "receive_method", nullable = false)
 	private ReceiveMethod receiveMethod;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "return_method", nullable = false)
 	private ReturnMethod returnMethod;
 
+	@Column(name = "return_address1")
 	private String returnAddress1;
 
+	@Column(name = "return_address2")
 	private String returnAddress2;
 
-	@Column(nullable = false)
+	@Column(name = "deposit", nullable = false)
 	private Integer deposit;
 
-	@Column(nullable = false)
+	@Column(name = "fee", nullable = false)
 	private Integer fee;
 
+	@Column(name = "is_banned", nullable = false)
 	private Boolean isBanned = false;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "embedding_status", nullable = false)
 	private EmbeddingStatus embeddingStatus;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -80,10 +83,10 @@ public class Post extends BaseEntity {
 		nullable = false,
 		foreignKey = @ForeignKey(name = "fk_post_category")
 	)
-
 	private Category category;
 
 	@Version
+	@Column(name = "embedding_version", nullable = false)
 	private Long embeddingVersion;
 
 	public static Post of(

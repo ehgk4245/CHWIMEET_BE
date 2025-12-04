@@ -2,6 +2,7 @@ package com.back.domain.post.entity;
 
 import com.back.global.jpa.entity.BaseEntity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -16,8 +17,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class PostImage extends BaseEntity {
+	@Column(name = "image_url", nullable = false)
 	private String imageUrl;
 
+	@Column(name = "is_primary", nullable = false)
 	private Boolean isPrimary = false;
 
 	@ManyToOne(fetch = FetchType.LAZY)

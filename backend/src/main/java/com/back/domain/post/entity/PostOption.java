@@ -2,6 +2,7 @@ package com.back.domain.post.entity;
 
 import com.back.global.jpa.entity.BaseEntity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -16,10 +17,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class PostOption extends BaseEntity {
+	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "deposit", nullable = false)
 	private Integer deposit;
 
+	@Column(name = "fee", nullable = false)
 	private Integer fee;
 
 	@ManyToOne(fetch = FetchType.LAZY)
