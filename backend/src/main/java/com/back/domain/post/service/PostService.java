@@ -1,5 +1,17 @@
 package com.back.domain.post.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.back.domain.category.entity.Category;
 import com.back.domain.category.repository.CategoryRepository;
 import com.back.domain.member.entity.Member;
@@ -8,28 +20,30 @@ import com.back.domain.post.dto.req.PostCreateReqBody;
 import com.back.domain.post.dto.req.PostEmbeddingDto;
 import com.back.domain.post.dto.req.PostImageReqBody;
 import com.back.domain.post.dto.req.PostUpdateReqBody;
-import com.back.domain.post.dto.res.*;
-import com.back.domain.post.entity.*;
-import com.back.domain.post.repository.*;
+import com.back.domain.post.dto.res.PostBannedResBody;
+import com.back.domain.post.dto.res.PostCreateResBody;
+import com.back.domain.post.dto.res.PostDetailResBody;
+import com.back.domain.post.dto.res.PostImageResBody;
+import com.back.domain.post.dto.res.PostListResBody;
+import com.back.domain.post.entity.Post;
+import com.back.domain.post.entity.PostFavorite;
+import com.back.domain.post.entity.PostImage;
+import com.back.domain.post.entity.PostOption;
+import com.back.domain.post.entity.PostRegion;
+import com.back.domain.post.repository.PostFavoriteQueryRepository;
+import com.back.domain.post.repository.PostFavoriteRepository;
+import com.back.domain.post.repository.PostOptionRepository;
+import com.back.domain.post.repository.PostQueryRepository;
+import com.back.domain.post.repository.PostRepository;
 import com.back.domain.region.entity.Region;
 import com.back.domain.region.repository.RegionRepository;
 import com.back.global.exception.ServiceException;
 import com.back.global.s3.S3Uploader;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -62,12 +76,9 @@ public class PostService {
 			throw new ServiceException(HttpStatus.BAD_REQUEST, "이미지는 최소 1개 이상 등록해야 합니다.");
 		}
 
-		if (reqBody.images() == null ||
-			reqBody.images().isEmpty() ||
-			reqBody.images().size() != images.size()) {
+		if (reqBody.images() == null || reqBody.images().isEmpty() || reqBody.images().size() != images.size()) {
 
-			throw new ServiceException(HttpStatus.BAD_REQUEST,
-				"이미지 정보(images)와 업로드한 파일 개수가 일치해야 합니다.");
+			throw new ServiceException(HttpStatus.BAD_REQUEST, "이미지 정보(images)와 업로드한 파일 개수가 일치해야 합니다.");
 		}
 
 		List<Region> regions = this.regionRepository.findAllById(reqBody.regionIds());
@@ -133,7 +144,8 @@ public class PostService {
 			boolean isFavorite = memberId != null && !post.getAuthor().getId().equals(memberId)
 				&& this.postFavoriteRepository.findByMemberIdAndPostId(memberId, post.getId()).isPresent();
 
-			String thumbnail = post.getImages().stream()
+			String thumbnail = post.getImages()
+				.stream()
 				.filter(PostImage::getIsPrimary)
 				.findFirst()
 				.map(img -> s3.generatePresignedUrl(img.getImageUrl()))
@@ -153,35 +165,34 @@ public class PostService {
 		boolean isFavorite = false;
 
 		if (memberId != null) {
-			isFavorite = this.postFavoriteRepository
-				.findByMemberIdAndPostId(memberId, postId)
-				.isPresent();
+			isFavorite = this.postFavoriteRepository.findByMemberIdAndPostId(memberId, postId).isPresent();
 		}
 
-		List<PostImageResBody> images = post.getImages().stream()
+		List<PostImageResBody> images = post.getImages()
+			.stream()
 			.map(img -> PostImageResBody.of(img, s3.generatePresignedUrl(img.getImageUrl())))
 			.toList();
 
-		String authorProfileUrl = post.getAuthor().getProfileImgUrl() != null
-			? s3.generatePresignedUrl(post.getAuthor().getProfileImgUrl())
-			: null;
+		String authorProfileUrl =
+			post.getAuthor().getProfileImgUrl() != null ? s3.generatePresignedUrl(post.getAuthor().getProfileImgUrl()) :
+				null;
 
 		return PostDetailResBody.of(post, isFavorite, images, authorProfileUrl);
 	}
 
 	@Transactional(readOnly = true)
 	public PagePayload<PostListResBody> getMyPosts(Long memberId, Pageable pageable) {
-		Page<PostListResBody> result = this.postQueryRepository.findMyPost(memberId, pageable)
-			.map(post -> {
+		Page<PostListResBody> result = this.postQueryRepository.findMyPost(memberId, pageable).map(post -> {
 
-				String thumbnail = post.getImages().stream()
-					.filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
-					.findFirst()
-					.map(img -> s3.generatePresignedUrl(img.getImageUrl()))
-					.orElse(null);
+			String thumbnail = post.getImages()
+				.stream()
+				.filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+				.findFirst()
+				.map(img -> s3.generatePresignedUrl(img.getImageUrl()))
+				.orElse(null);
 
-				return PostListResBody.of(post, false, thumbnail);
-			});
+			return PostListResBody.of(post, false, thumbnail);
+		});
 
 		return PageUt.of(result);
 	}
@@ -222,7 +233,8 @@ public class PostService {
 
 			Post post = fav.getPost();
 
-			String thumbnail = post.getImages().stream()
+			String thumbnail = post.getImages()
+				.stream()
 				.filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
 				.findFirst()
 				.map(img -> s3.generatePresignedUrl(img.getImageUrl()))
@@ -248,16 +260,8 @@ public class PostService {
 		Category category = this.categoryRepository.findById(reqBody.categoryId())
 			.orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "존재하지 않는 카테고리입니다."));
 
-		post.updatePost(
-			reqBody.title(),
-			reqBody.content(),
-			reqBody.receiveMethod(),
-			reqBody.returnMethod(),
-			reqBody.returnAddress1(),
-			reqBody.returnAddress2(),
-			reqBody.deposit(),
-			reqBody.fee()
-		);
+		post.updatePost(reqBody.title(), reqBody.content(), reqBody.receiveMethod(), reqBody.returnMethod(),
+			reqBody.returnAddress1(), reqBody.returnAddress2(), reqBody.deposit(), reqBody.fee());
 
 		post.updateCategory(category);
 
@@ -268,7 +272,8 @@ public class PostService {
 
 		post.resetPostRegions(newPostRegions);
 
-		List<PostOption> newOptions = reqBody.options().stream()
+		List<PostOption> newOptions = reqBody.options()
+			.stream()
 			.map(option -> new PostOption(post, option.name(), option.deposit(), option.fee()))
 			.toList();
 
@@ -276,23 +281,16 @@ public class PostService {
 
 		post.resetPostImages(processPostImage(post, reqBody, images));
 
-		// 기존 임베딩 데이터 삭제
 		postVectorService.deletePost(postId);
-		// 수정된 게시글은 다시 임베딩 대기 상태로 변경
+
 		post.updateEmbeddingStatusWait();
 	}
 
-	private List<PostImage> processPostImage(
-		Post post,
-		PostUpdateReqBody reqBody,
-		List<MultipartFile> images
-	) {
-		List<Long> keepImageIds = reqBody.images().stream()
-			.map(PostImageReqBody::id)
-			.filter(Objects::nonNull)
-			.toList();
+	private List<PostImage> processPostImage(Post post, PostUpdateReqBody reqBody, List<MultipartFile> images) {
+		List<Long> keepImageIds = reqBody.images().stream().map(PostImageReqBody::id).filter(Objects::nonNull).toList();
 
-		post.getImages().stream()
+		post.getImages()
+			.stream()
 			.filter(img -> !keepImageIds.contains(img.getId()))
 			.forEach(img -> s3.delete(img.getImageUrl()));
 
@@ -302,20 +300,17 @@ public class PostService {
 		for (PostImageReqBody imageReq : reqBody.images()) {
 			if (imageReq.id() != null) {
 
-				PostImage existingImage = post.getImages().stream()
+				PostImage existingImage = post.getImages()
+					.stream()
 					.filter(img -> img.getId().equals(imageReq.id()))
 					.findFirst()
-					.orElseThrow(() -> new ServiceException(
-						HttpStatus.NOT_FOUND,
-						"존재하지 않는 이미지입니다: " + imageReq.id()
-					));
+					.orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "존재하지 않는 이미지입니다: " + imageReq.id()));
 
 				result.add(new PostImage(post, existingImage.getImageUrl(), imageReq.isPrimary()));
 
 			} else {
 				if (images == null || fileIndex >= images.size()) {
-					throw new ServiceException(HttpStatus.BAD_REQUEST,
-						"이미지 정보와 파일 개수가 일치하지 않습니다.");
+					throw new ServiceException(HttpStatus.BAD_REQUEST, "이미지 정보와 파일 개수가 일치하지 않습니다.");
 				}
 
 				String uploadedUrl = s3.upload(images.get(fileIndex));
@@ -341,7 +336,8 @@ public class PostService {
 			throw new ServiceException(HttpStatus.FORBIDDEN, "본인의 게시글만 삭제할 수 있습니다.");
 		}
 
-		List<String> imageUrls = post.getImages().stream()
+		List<String> imageUrls = post.getImages()
+			.stream()
 			.map(PostImage::getImageUrl)
 			.filter(Objects::nonNull)
 			.toList();
@@ -362,9 +358,7 @@ public class PostService {
 	@Transactional
 	public PostBannedResBody banPost(Long postId) {
 		Post post = postRepository.findById(postId)
-			.orElseThrow(
-				() -> new ServiceException(HttpStatus.NOT_FOUND, "%d번 글은 존재하지 않는 게시글입니다.".formatted(postId))
-			);
+			.orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "%d번 글은 존재하지 않는 게시글입니다.".formatted(postId)));
 		if (post.getIsBanned()) {
 			throw new ServiceException(HttpStatus.BAD_REQUEST, "%d번 글은 이미 차단되었습니다.".formatted(postId));
 		}
@@ -375,9 +369,7 @@ public class PostService {
 	@Transactional
 	public PostBannedResBody unbanPost(Long postId) {
 		Post post = postRepository.findById(postId)
-			.orElseThrow(
-				() -> new ServiceException(HttpStatus.NOT_FOUND, "%d번 글은 존재하지 않는 게시글입니다.".formatted(postId))
-			);
+			.orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "%d번 글은 존재하지 않는 게시글입니다.".formatted(postId)));
 		if (!post.getIsBanned()) {
 			throw new ServiceException(HttpStatus.BAD_REQUEST, "%d번 글은 제재되지 않았습니다.".formatted(postId));
 		}
@@ -386,23 +378,17 @@ public class PostService {
 	}
 
 	public void embedPostsBatch() {
-		List<Post> postsToEmbed = postQueryRepository.findPostsToEmbedWithDetails(100); // 한 번에 최대 100개 게시글 처리
+		List<Post> postsToEmbed = postQueryRepository.findPostsToEmbedWithDetails(100);
 
 		if (postsToEmbed.isEmpty()) {
 			log.info("임베딩할 WAIT 상태의 게시글이 없습니다.");
 			return;
 		}
 
-		// 1️⃣ DTO 변환 (버전 정보 포함)
-		List<PostEmbeddingDto> postDtos = postsToEmbed.stream()
-			.map(PostEmbeddingDto::from)
-			.toList();
+		List<PostEmbeddingDto> postDtos = postsToEmbed.stream().map(PostEmbeddingDto::from).toList();
 
-		List<Long> postIds = postDtos.stream()
-			.map(PostEmbeddingDto::id)
-			.toList();
+		List<Long> postIds = postDtos.stream().map(PostEmbeddingDto::id).toList();
 
-		// 2️⃣ 벌크로 선점 시도 (버전 증가)
 		long updatedCount = postTransactionService.updateStatusToPending(postIds);
 
 		if (updatedCount == 0) {
@@ -412,15 +398,10 @@ public class PostService {
 
 		log.info("총 {}개의 게시글을 PENDING 상태로 선점 시도했습니다.", updatedCount);
 
-		// 3️⃣ 실제로 선점된 게시글만 필터링 (낙관적 락 검증)
-		List<PostEmbeddingDto> acquiredPosts = postTransactionService
-			.verifyAcquiredPosts(postDtos);
+		List<PostEmbeddingDto> acquiredPosts = postTransactionService.verifyAcquiredPosts(postDtos);
 
-		log.info("실제 선점 성공: {}건 (다른 워커 선점: {}건)",
-			acquiredPosts.size(),
-			postDtos.size() - acquiredPosts.size());
+		log.info("실제 선점 성공: {}건 (다른 워커 선점: {}건)", acquiredPosts.size(), postDtos.size() - acquiredPosts.size());
 
-		// 4️⃣ 임베딩 처리
 		int successCount = 0;
 		int failedCount = 0;
 

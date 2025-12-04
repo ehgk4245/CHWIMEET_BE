@@ -1,5 +1,23 @@
 package com.back.domain.post.repository;
 
+import static com.back.domain.member.entity.QMember.*;
+import static com.back.domain.post.entity.QPost.*;
+import static com.back.domain.post.entity.QPostRegion.*;
+import static com.back.domain.region.entity.QRegion.*;
+import static com.back.domain.reservation.entity.QReservation.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
 import com.back.domain.post.common.EmbeddingStatus;
 import com.back.domain.post.dto.req.PostEmbeddingDto;
 import com.back.domain.post.entity.Post;
@@ -8,19 +26,6 @@ import com.back.domain.reservation.entity.Reservation;
 import com.back.global.queryDsl.CustomQuerydslRepositorySupport;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Repository;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.back.domain.member.entity.QMember.member;
-import static com.back.domain.post.entity.QPost.post;
-import static com.back.domain.post.entity.QPostRegion.postRegion;
-import static com.back.domain.region.entity.QRegion.region;
-import static com.back.domain.reservation.entity.QReservation.reservation;
 
 @Repository
 public class PostQueryRepository extends CustomQuerydslRepositorySupport {
@@ -29,36 +34,19 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 		super(Post.class);
 	}
 
-	public Page<Post> findFilteredPosts(
-		String keyword,
-		List<Long> categoryId,
-		List<Long> regionIds,
+	public Page<Post> findFilteredPosts(String keyword, List<Long> categoryId, List<Long> regionIds,
 		Pageable pageable) {
-		return applyPagination(
-			pageable,
-			contentQuery -> contentQuery
-				.selectFrom(post)
-                .leftJoin(post.postRegions, postRegion)
-				.leftJoin(postRegion.region, region)
-                .join(post.author, member).fetchJoin()
-				.where(
-					containsKeyword(keyword),
-					inCategoryIds(categoryId),
-					inRegionIds(regionIds),
-					post.isBanned.isFalse() // 제재 처리 된 게시물 제외
-				)
-                ,
-			countQuery -> countQuery
-				.select(post.count())
-				.from(post)
-				.leftJoin(post.postRegions, postRegion)
-				.where(
-					containsKeyword(keyword),
-					inCategoryIds(categoryId),
-					inRegionIds(regionIds),
-                    post.isBanned.isFalse() // 제재 처리 된 게시물 제외
-				)
-		);
+		return applyPagination(pageable, contentQuery -> contentQuery.selectFrom(post)
+			.leftJoin(post.postRegions, postRegion)
+			.leftJoin(postRegion.region, region)
+			.join(post.author, member)
+			.fetchJoin()
+			.where(containsKeyword(keyword), inCategoryIds(categoryId), inRegionIds(regionIds),
+				post.isBanned.isFalse()), countQuery -> countQuery.select(post.count())
+			.from(post)
+			.leftJoin(post.postRegions, postRegion)
+			.where(containsKeyword(keyword), inCategoryIds(categoryId), inRegionIds(regionIds),
+				post.isBanned.isFalse()));
 	}
 
 	private BooleanExpression containsKeyword(String keyword) {
@@ -66,71 +54,47 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 	}
 
 	private BooleanExpression inCategoryIds(List<Long> categoryIds) {
-		return (categoryIds == null || categoryIds.isEmpty())
-			? null
-			: post.category.id.in(categoryIds);
+		return (categoryIds == null || categoryIds.isEmpty()) ? null : post.category.id.in(categoryIds);
 	}
 
 	private BooleanExpression inRegionIds(List<Long> regionIds) {
-		return (regionIds == null || regionIds.isEmpty())
-			? null
-			: postRegion.region.id.in(regionIds);
+		return (regionIds == null || regionIds.isEmpty()) ? null : postRegion.region.id.in(regionIds);
 	}
 
 	public Page<Post> findMyPost(Long memberId, Pageable pageable) {
 
-		return applyPagination(
-			pageable,
-			contentQuery -> contentQuery
-				.selectFrom(post)
-				.where(post.author.id.eq(memberId)),
-			countQuery -> countQuery
-				.select(post.count())
-				.from(post)
-				.where(post.author.id.eq(memberId))
-		);
+		return applyPagination(pageable,
+			contentQuery -> contentQuery.selectFrom(post).where(post.author.id.eq(memberId)),
+			countQuery -> countQuery.select(post.count()).from(post).where(post.author.id.eq(memberId)));
 	}
 
 	public List<LocalDateTime> findReservedDatesFromToday(Long postId) {
 		LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
 
-		List<ReservationStatus> excludedStatuses = List.of(
-			ReservationStatus.PENDING_APPROVAL,
-			ReservationStatus.CANCELLED,
-			ReservationStatus.REJECTED
-		);
+		List<ReservationStatus> excludedStatuses = List.of(ReservationStatus.PENDING_APPROVAL,
+			ReservationStatus.CANCELLED, ReservationStatus.REJECTED);
 
-		// 시작일과 종료일을 함께 조회
-		List<Reservation> reservations = select(reservation)
-			.from(reservation)
-			.where(
-				reservation.post.id.eq(postId),
-				reservation.reservationEndAt.goe(today), // 종료일이 오늘 이후
-				reservation.status.notIn(excludedStatuses)
-			)
+		List<Reservation> reservations = select(reservation).from(reservation)
+			.where(reservation.post.id.eq(postId), reservation.reservationEndAt.goe(today),
+				reservation.status.notIn(excludedStatuses))
 			.fetch();
 
-		// 각 예약의 시작일~종료일 사이 모든 날짜를 Set에 담기 (중복 제거)
 		Set<LocalDateTime> allReservedDates = new HashSet<>();
 
 		for (Reservation r : reservations) {
 			LocalDateTime start = r.getReservationStartAt().withHour(0).withMinute(0).withSecond(0).withNano(0);
 			LocalDateTime end = r.getReservationEndAt().withHour(0).withMinute(0).withSecond(0).withNano(0);
 
-			// start부터 end까지 하루씩 증가하며 모든 날짜 추가
 			LocalDateTime current = start;
 			while (!current.isAfter(end)) {
-				if (!current.isBefore(today)) { // 오늘 이후만
+				if (!current.isBefore(today)) {
 					allReservedDates.add(current);
 				}
 				current = current.plusDays(1);
 			}
 		}
 
-		// 정렬해서 반환
-		return allReservedDates.stream()
-			.sorted()
-			.collect(Collectors.toList());
+		return allReservedDates.stream().sorted().collect(Collectors.toList());
 	}
 
 	/**
@@ -138,29 +102,27 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 	 * @return 실제로 변경된 레코드(row) 수
 	 */
 	public long bulkBanPosts(List<Long> postIds) {
-		long updatedCount = getQueryFactory()
-				.update(post) // UPDATE Post p
-				.set(post.isBanned, true) // SET p.isBanned = true
-				.where(post.id.in(postIds)) // WHERE p.id IN (:postIds)
-				.execute(); // 쿼리 실행 및 변경된 행 개수 반환
+		long updatedCount = getQueryFactory().update(post)
+			.set(post.isBanned, true)
+			.where(post.id.in(postIds))
+			.execute();
 
-		// 필요에 따라 영속성 컨텍스트(JPA 1차 캐시) 초기화
-		// 벌크 연산은 캐시를 우회하므로, 이후 트랜잭션 내에서 최신 데이터를
-		// 조회해야 한다면 반드시 초기화해야 합니다.
 		getEntityManager().clear();
 
 		return updatedCount;
 	}
 
 	public List<Post> findPostsToEmbedWithDetails(int limit) {
-		return selectFrom(post)
-				.join(post.category).fetchJoin()
-				.join(post.author).fetchJoin()
-				.leftJoin(post.postRegions).fetchJoin()
-				.where(post.embeddingStatus.eq(EmbeddingStatus.WAIT))
-				.orderBy(post.createdAt.asc())  // 오래된 것부터
-				.limit(limit)  // 🔥 제한 추가
-				.fetch();
+		return selectFrom(post).join(post.category)
+			.fetchJoin()
+			.join(post.author)
+			.fetchJoin()
+			.leftJoin(post.postRegions)
+			.fetchJoin()
+			.where(post.embeddingStatus.eq(EmbeddingStatus.WAIT))
+			.orderBy(post.createdAt.asc())
+			.limit(limit)
+			.fetch();
 	}
 
 	/**
@@ -171,15 +133,11 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 			return 0;
 		}
 
-		long updatedCount = getQueryFactory()
-				.update(post)
-				.set(post.embeddingStatus, EmbeddingStatus.PENDING)
-				.set(post.embeddingVersion, post.embeddingVersion.add(1))  // 🔥 버전 증가
-				.where(
-						post.id.in(postIds),
-						post.embeddingStatus.eq(EmbeddingStatus.WAIT)
-				)
-				.execute();
+		long updatedCount = getQueryFactory().update(post)
+			.set(post.embeddingStatus, EmbeddingStatus.PENDING)
+			.set(post.embeddingVersion, post.embeddingVersion.add(1))
+			.where(post.id.in(postIds), post.embeddingStatus.eq(EmbeddingStatus.WAIT))
+			.execute();
 
 		getEntityManager().clear();
 		return updatedCount;
@@ -193,39 +151,23 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 			return List.of();
 		}
 
-		// 예상 버전 맵 생성 (원래 버전 + 1)
 		Map<Long, Long> expectedVersions = postDtos.stream()
-				.collect(Collectors.toMap(
-						PostEmbeddingDto::id,
-						dto -> dto.embeddingVersion() + 1
-				));
+			.collect(Collectors.toMap(PostEmbeddingDto::id, dto -> dto.embeddingVersion() + 1));
 
 		List<Long> postIds = new ArrayList<>(expectedVersions.keySet());
 
-		// PENDING 상태인 게시글의 현재 버전 조회
-		List<Tuple> results = getQueryFactory()
-				.select(post.id, post.embeddingVersion)
-				.from(post)
-				.where(
-						post.id.in(postIds),
-						post.embeddingStatus.eq(EmbeddingStatus.PENDING)
-				)
-				.fetch();
+		List<Tuple> results = getQueryFactory().select(post.id, post.embeddingVersion)
+			.from(post)
+			.where(post.id.in(postIds), post.embeddingStatus.eq(EmbeddingStatus.PENDING))
+			.fetch();
 
-		// 버전이 일치하는 ID만 추출
-		Set<Long> acquiredIds = results.stream()
-				.filter(tuple -> {
-					Long id = tuple.get(post.id);
-					Long currentVersion = tuple.get(post.embeddingVersion);
-					return currentVersion.equals(expectedVersions.get(id));
-				})
-				.map(tuple -> tuple.get(post.id))
-				.collect(Collectors.toSet());
+		Set<Long> acquiredIds = results.stream().filter(tuple -> {
+			Long id = tuple.get(post.id);
+			Long currentVersion = tuple.get(post.embeddingVersion);
+			return currentVersion.equals(expectedVersions.get(id));
+		}).map(tuple -> tuple.get(post.id)).collect(Collectors.toSet());
 
-		// 선점 성공한 DTO만 반환
-		return postDtos.stream()
-				.filter(dto -> acquiredIds.contains(dto.id()))
-				.toList();
+		return postDtos.stream().filter(dto -> acquiredIds.contains(dto.id())).toList();
 	}
 
 	public long bulkUpdateStatus(List<Long> postIds, EmbeddingStatus toStatus, EmbeddingStatus fromStatus) {
@@ -233,17 +175,12 @@ public class PostQueryRepository extends CustomQuerydslRepositorySupport {
 			return 0;
 		}
 
-		long updatedCount = getQueryFactory() // CustomQuerydslRepositorySupport의 메서드 사용
-				.update(post) // UPDATE Post p
-				.set(post.embeddingStatus, toStatus) // SET p.embeddingStatus = :toStatus
-				.where(
-						post.id.in(postIds), // WHERE p.id IN (:postIds)
-						post.embeddingStatus.eq(fromStatus) // AND p.embeddingStatus = :fromStatus
-				)
-				.execute(); // 쿼리 실행
+		long updatedCount = getQueryFactory().update(post)
+			.set(post.embeddingStatus, toStatus)
+			.where(post.id.in(postIds), post.embeddingStatus.eq(fromStatus))
+			.execute();
 
-		// 벌크 연산 후, 영속성 컨텍스트(1차 캐시)의 데이터가 DB와 불일치하므로 반드시 초기화
-		getEntityManager().clear(); // CustomQuerydslRepositorySupport의 메서드 사용
+		getEntityManager().clear();
 
 		return updatedCount;
 	}

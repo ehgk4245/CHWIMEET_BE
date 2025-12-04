@@ -2,9 +2,11 @@ package com.back.domain.post.controller;
 
 import com.back.domain.post.dto.req.PostCreateReqBody;
 import com.back.domain.post.dto.req.PostUpdateReqBody;
+import com.back.domain.post.dto.res.GenPostDetailResBody;
 import com.back.domain.post.dto.res.PostCreateResBody;
 import com.back.domain.post.dto.res.PostDetailResBody;
 import com.back.domain.post.dto.res.PostListResBody;
+import com.back.global.annotations.ValidateImages;
 import com.back.global.rsData.RsData;
 import com.back.global.security.SecurityUser;
 import com.back.standard.util.page.PagePayload;
@@ -90,6 +92,12 @@ public interface PostApi {
 		@PathVariable Long postId,
 		@AuthenticationPrincipal SecurityUser user
 	);
+
+
+	@Operation(summary = "이미지 기반 게시글 생성", description = "AI 가 이미지를 기반으로 게시글의 상세내용을 작성합니다.")
+	ResponseEntity<RsData<GenPostDetailResBody>> genDetail(
+			@ValidateImages @RequestPart("images") List<MultipartFile> imageFiles,
+			@RequestPart(name = "additionalInfo", required = false) String additionalInfo);
 
 	@Operation(summary = "AI 검색 API", description = "유사 게시글을 AI로 검색하고 설명을 생성합니다.")
 	ResponseEntity<RsData<?>> searchPostsWithAi(

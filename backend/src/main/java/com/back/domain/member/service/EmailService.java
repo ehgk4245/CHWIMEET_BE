@@ -4,8 +4,6 @@ import com.back.domain.member.repository.EmailRedisRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,36 +13,16 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class EmailService {
     private final EmailRedisRepository emailRedisRepository;
-    private final JavaMailSender mailSender;
+    private final EmailSender emailSender;
 
     public LocalDateTime sendVerificationCode(String email) {
         String code = generateCode();
         emailRedisRepository.saveCode(email, code);
 
-        // 만료 시간 계산 (서버 기준 현재 시간 + TTL)
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(5);
 
-        String subject = "[Chwi-Meet] 이메일 인증코드 안내";
-        String content = """
-                안녕하세요. Chwi-Meet 입니다.
+        emailSender.sendMailAsync(email, code);
 
-                이메일 인증을 위해 아래 인증코드를 입력해주세요.
-
-                인증코드: %s
-
-                유효시간: 5분
-
-                감사합니다.
-                """.formatted(code);
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject(subject);
-        message.setText(content);
-
-        mailSender.send(message);
-
-        // 클라이언트에게 만료 시간 내려주기
         return expiresAt;
     }
 

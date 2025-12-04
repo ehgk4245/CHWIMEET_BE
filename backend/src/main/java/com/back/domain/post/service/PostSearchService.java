@@ -31,7 +31,6 @@ public class PostSearchService {
 	private final CategoryRepository categoryRepository;
 	private final RegionRepository regionRepository;
 	private final S3Uploader s3;
-
 	private final ChatClient rerankerClient;
 	private final ChatClient answerClient;
 
