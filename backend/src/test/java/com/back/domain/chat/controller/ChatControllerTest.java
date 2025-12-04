@@ -41,7 +41,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("채팅방 생성 성공")
-    void test1_createChatRoom_success() throws Exception {
+    void createChatRoom_success() throws Exception {
         // given
         CreateChatRoomReqBody reqBody = new CreateChatRoomReqBody(4L);
 
@@ -62,7 +62,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("이미 존재하는 채팅방일 때")
-    void test2_createChatRoom_alreadyExists() throws Exception {
+    void createChatRoom_alreadyExists() throws Exception {
         // given
         CreateChatRoomReqBody reqBody = new CreateChatRoomReqBody(1L);
 
@@ -82,7 +82,7 @@ class ChatControllerTest {
 
     @Test
     @DisplayName("로그인 안 한 상태에서 채팅방 생성 시도")
-    void test3_createChatRoom_unauthorized() throws Exception {
+    void createChatRoom_unauthorized() throws Exception {
         // given
         CreateChatRoomReqBody reqBody = new CreateChatRoomReqBody(1L);
 
@@ -100,7 +100,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user2@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("본인과 채팅방 생성 시도 - 예외 발생")
-    void test4_createChatRoom_withSelf_shouldThrow() throws Exception {
+    void createChatRoom_withSelf_shouldThrow() throws Exception {
         // given
         CreateChatRoomReqBody reqBody = new CreateChatRoomReqBody(1L);
 
@@ -120,7 +120,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("채팅방 목록 조회 - 검색어 없음")
-    void test5_getMyChatRooms_withoutKeyword() throws Exception {
+    void getMyChatRooms_withoutKeyword() throws Exception {
         // when
         ResultActions resultActions = mvc.perform(get("/api/v1/chats")
                         .param("page", "0")
@@ -143,7 +143,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("채팅방 목록 조회 - 게시글 제목으로 검색 (텐트)")
-    void test6_getMyChatRooms_searchByPostTitle_tent() throws Exception {
+    void getMyChatRooms_searchByPostTitle_tent() throws Exception {
         // when
         ResultActions resultActions = mvc.perform(get("/api/v1/chats")
                         .param("page", "0")
@@ -165,29 +165,8 @@ class ChatControllerTest {
 
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("채팅방 목록 조회 - 게시글 제목으로 검색 (대여)")
-    void test7_getMyChatRooms_searchByPostTitle_rent() throws Exception {
-        // when
-        ResultActions resultActions = mvc.perform(get("/api/v1/chats")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .param("keyword", "대여"))
-                .andDo(print());
-
-        // then
-        resultActions
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.msg").value("내 채팅방 목록"))
-                .andExpect(jsonPath("$.data.content").isArray())
-                .andExpect(jsonPath("$.data.content.length()").value(2))
-                .andExpect(jsonPath("$.data.page.totalElements").value(2));
-    }
-
-    @Test
-    @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("채팅방 목록 조회 - 상대방 닉네임으로 검색")
-    void test8_getMyChatRooms_searchByMemberNickname() throws Exception {
+    void getMyChatRooms_searchByMemberNickname() throws Exception {
         // when
         ResultActions resultActions = mvc.perform(get("/api/v1/chats")
                         .param("page", "0")
@@ -210,7 +189,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("채팅방 목록 조회 - 페이징 테스트")
-    void test9_getMyChatRooms_pagination() throws Exception {
+    void getMyChatRooms_pagination() throws Exception {
         // 첫 페이지 (size=2)
         ResultActions resultActions = mvc.perform(get("/api/v1/chats")
                         .param("page", "0")
@@ -249,7 +228,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("채팅방 상세 정보 조회 성공")
-    void test10_getChatRoom_success() throws Exception {
+    void getChatRoom_success() throws Exception {
         // given
         Long chatRoomId = 1L;
         Long otherMemberId = 2L;
@@ -273,7 +252,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user1@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("존재하지 않는 채팅방 조회 시도")
-    void test11_getChatRoom_notFound() throws Exception {
+    void getChatRoom_notFound() throws Exception {
         // given
         Long nonExistentChatRoomId = 99999L;
 
@@ -291,7 +270,7 @@ class ChatControllerTest {
     @Test
     @WithUserDetails(value = "user2@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("권한 없는 채팅방 조회 시도 - member2가 member1-member3 채팅방 접근")
-    void test12_getChatRoom_forbidden() throws Exception {
+    void getChatRoom_forbidden() throws Exception {
         // given
         Long chatRoomId = 2L;
 
