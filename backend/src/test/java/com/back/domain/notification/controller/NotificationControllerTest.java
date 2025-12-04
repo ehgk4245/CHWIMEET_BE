@@ -92,4 +92,19 @@ class NotificationControllerTest {
         List<Notification> after = notificationRepository.findByMemberId(1L);
         assertThat(after).extracting("isRead").containsExactly(true, true, true, true, true, true);
     }
+
+    @Test
+    @DisplayName("특정 알림 읽음 처리")
+    @WithUserDetails(value = "user1@example.com")
+    void updateToRead_shouldMarkSingleNotificationAsRead() throws Exception {
+        Notification n2 = notificationRepository.findById(2L).orElseThrow();
+        assertThat(n2.getIsRead()).isFalse();
+
+        mockMvc.perform(post("/api/v1/notifications/2"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+
+        n2 = notificationRepository.findById(2L).orElseThrow();
+        assertThat(n2.getIsRead()).isTrue();
+    }
 }
