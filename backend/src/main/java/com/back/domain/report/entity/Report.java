@@ -21,10 +21,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Report extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "target_id", nullable = false)
     private Long targetId;
 
-    @Column(nullable = false)
+    @Column(name = "comment",nullable = false)
     private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,7 +32,7 @@ public class Report extends BaseEntity {
     private Member member;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "report_type",nullable = false)
     private ReportType reportType;
 
     public static Report create(Long targetId, String comment, Member member, ReportType reportType) {
@@ -43,7 +43,7 @@ public class Report extends BaseEntity {
         return new Report(targetId, comment, member, ReportType.POST);
     }
 
-    public static Report createUserType(Long targetId, String comment, Member member) {
+    public static Report createMemberType(Long targetId, String comment, Member member) {
         return new Report(targetId, comment, member, ReportType.MEMBER);
     }
 
