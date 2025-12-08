@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.multipart.support.MultipartResolutionDelegate;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Order(value = Ordered.HIGHEST_PRECEDENCE)
 @Component
@@ -21,6 +23,11 @@ public class RequestCachingFilter extends OncePerRequestFilter {
         if (!MultipartResolutionDelegate.isMultipartRequest(request)) {
             request = new CachedHttpServletRequest(request);
         }
-        filterChain.doFilter(request, response);
+        try {
+            MDC.put("requestId", UUID.randomUUID().toString());
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.clear();
+        }
     }
 }
