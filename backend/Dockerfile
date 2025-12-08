@@ -36,6 +36,9 @@ WORKDIR /app
 # curl 없으면 HEALTHCHECK에서 바로 죽으니까 추가 설치
 RUN apk add --no-cache curl
 
+# 로그 디렉토리 미리 생성
+RUN mkdir -p /app/logs && chmod 755 /app/logs
+
 # non-root 유저
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
