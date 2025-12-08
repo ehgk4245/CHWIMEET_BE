@@ -224,7 +224,7 @@ class PostControllerTest {
 			      "regionIds": [1],
 			      "categoryId": 1,
 			      "deposit": 5000,
-			      "fee": 3000,
+			      "fee": 4000,
 			      "options": [],
 			      "images": [
 			          {
