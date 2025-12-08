@@ -16,7 +16,6 @@ import com.back.domain.review.repository.ReviewQueryRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +30,6 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@Slf4j
 public class NotificationService {
 
     private final MemberRepository memberRepository;
