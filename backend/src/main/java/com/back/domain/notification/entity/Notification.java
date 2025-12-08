@@ -1,6 +1,5 @@
 package com.back.domain.notification.entity;
 
-import com.back.domain.member.entity.Member;
 import com.back.domain.notification.common.NotificationType;
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;

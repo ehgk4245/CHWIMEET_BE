@@ -1,6 +1,5 @@
 package com.back.domain.notification.service;
 
-import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.domain.notification.common.NotificationData;
 import com.back.domain.notification.common.NotificationType;
@@ -10,14 +9,10 @@ import com.back.domain.notification.entity.Notification;
 import com.back.domain.notification.mapper.NotificationDataMapper;
 import com.back.domain.notification.repository.NotificationQueryRepository;
 import com.back.domain.notification.repository.NotificationRepository;
-import com.back.domain.reservation.entity.Reservation;
-import com.back.domain.reservation.repository.ReservationQueryRepository;
-import com.back.domain.review.entity.Review;
-import com.back.domain.review.repository.ReviewQueryRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -32,47 +27,15 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-@Slf4j
+@RequiredArgsConstructor
 public class NotificationService {
 
     private final MemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationQueryRepository notificationQueryRepository;
-    private final ReservationQueryRepository reservationQueryRepository;
-    private final ReviewQueryRepository reviewQueryRepository;
-    private final List<NotificationDataMapper<? extends NotificationData>> mappers;
-    private final Map<NotificationType.GroupType, Function<List<Long>, Map<Long, ?>>> batchLoaders = new HashMap<>();
+    private final Map<NotificationType, NotificationDataMapper<? extends NotificationData>> mapperRegistry;
+    private final Map<NotificationType.GroupType, Function<List<Long>, Map<Long, ?>>> batchLoaders;
     private final SseNotificationService sseNotificationService;
-
-    public NotificationService(
-            MemberRepository memberRepository,
-            NotificationRepository notificationRepository,
-            NotificationQueryRepository notificationQueryRepository,
-            ReservationQueryRepository reservationQueryRepository,
-            ReviewQueryRepository reviewQueryRepository,
-            List<NotificationDataMapper<? extends NotificationData>> mappers,
-            SseNotificationService sseNotificationService
-    ) {
-        this.memberRepository = memberRepository;
-        this.notificationRepository = notificationRepository;
-        this.notificationQueryRepository = notificationQueryRepository;
-        this.reservationQueryRepository = reservationQueryRepository;
-        this.reviewQueryRepository = reviewQueryRepository;
-        this.mappers = mappers;
-        this.sseNotificationService = sseNotificationService;
-        setBatchLoaders();
-    }
-
-    private void setBatchLoaders() {
-        batchLoaders.put(NotificationType.GroupType.RESERVATION, targetIds ->
-                reservationQueryRepository.findWithPostAndAuthorByIds(targetIds)
-                        .stream().collect(Collectors.toMap(Reservation::getId, r -> r))
-        );
-        batchLoaders.put(NotificationType.GroupType.REVIEW, targetIds ->
-                reviewQueryRepository.findWithReservationAndPostAndAuthorsByIds(targetIds)
-                        .stream().collect(Collectors.toMap(Review::getId, r -> r))
-        );
-    }
 
     @Transactional
     public void saveAndSendNotification(Long targetMemberId, NotificationType type, Long targetId) {
@@ -152,22 +115,19 @@ public class NotificationService {
     ) {
         List<NotificationResBody<? extends NotificationData>> resBodyList = new ArrayList<>();
         for (Notification notification : notifications) {
-            for (NotificationDataMapper<? extends NotificationData> mapper : mappers) {
-                if (mapper.supports(notification.getType())) {
+            NotificationDataMapper<? extends NotificationData> mapper = mapperRegistry.get(notification.getType());
 
-                    Map<Long, ?> entityMap = loadedEntities.get(notification.getType().getGroupType());
-                    Object entity = entityMap != null ? entityMap.get(notification.getTargetId()) : null;
+            Map<Long, ?> entityMap = loadedEntities.get(notification.getType().getGroupType());
+            Object entity = entityMap != null ? entityMap.get(notification.getTargetId()) : null;
 
-                    NotificationData data = mapper.map(entity, notification);
-                    resBodyList.add(new NotificationResBody<>(
-                            notification.getId(),
-                            notification.getType(),
-                            notification.getCreatedAt(),
-                            notification.getIsRead(),
-                            data
-                    ));
-                }
-            }
+            NotificationData data = mapper.map(entity, notification);
+            resBodyList.add(new NotificationResBody<>(
+                    notification.getId(),
+                    notification.getType(),
+                    notification.getCreatedAt(),
+                    notification.getIsRead(),
+                    data
+            ));
         }
         return resBodyList;
     }
