@@ -48,9 +48,6 @@ class PostControllerTest {
 	@MockitoBean
 	private S3Uploader s3Uploader;
 
-	@MockitoBean
-	private PostVectorService postVectorService;
-
 	@BeforeEach
 	void setup() {
 		when(s3Uploader.upload(any(), any()))

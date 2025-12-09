@@ -1,20 +1,27 @@
 package com.back.domain.reservation.controller;
 
 import com.back.BaseContainerIntegrationTest;
+import com.back.config.TestConfig;
 import com.back.domain.reservation.common.ReservationDeliveryMethod;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.dto.UpdateReservationReqBody;
 import com.back.domain.reservation.dto.UpdateReservationStatusReqBody;
 import com.back.domain.reservation.repository.ReservationRepository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +39,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.Matchers.*;
 
+@ActiveProfiles("test")
+@SpringBootTest
+@Import(TestConfig.class)
+@AutoConfigureMockMvc
 @Sql({
         "/sql/categories.sql",
         "/sql/regions.sql",
@@ -42,7 +53,13 @@ import static org.hamcrest.Matchers.*;
         "/sql/notifications.sql"
 })
 @Sql(scripts = "/sql/clean-up.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-class ReservationControllerTest extends BaseContainerIntegrationTest {
+class ReservationControllerTest{
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    protected ObjectMapper objectMapper;
 
     @Autowired
     private ReservationRepository reservationRepository;
