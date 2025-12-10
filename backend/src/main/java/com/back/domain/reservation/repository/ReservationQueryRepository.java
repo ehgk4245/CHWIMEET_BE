@@ -55,7 +55,13 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport{
                 .where(
                         postIdEq(postId),
                         excludeReservationIdNe(excludeReservationId),
-                        statusNotIn(ReservationStatus.CANCELLED, ReservationStatus.REJECTED),
+                        statusNotIn(
+                                ReservationStatus.PENDING_APPROVAL,
+                                ReservationStatus.CANCELLED,
+                                ReservationStatus.REJECTED,
+                                ReservationStatus.REFUND_COMPLETED,
+                                ReservationStatus.CLAIM_COMPLETED
+                        ),
                         dateOverlap(startAt, endAt)
                 )
                 .fetchFirst();

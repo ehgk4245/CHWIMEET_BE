@@ -31,6 +31,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -338,7 +339,7 @@ public class ReservationService {
         return convertToReservationDto(reservation);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ReservationDto updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
         Reservation reservation = reservationQueryRepository.findByIdWithPostAndAuthor(reservationId)
                 .orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "해당 예약을 찾을 수 없습니다."));
@@ -381,9 +382,28 @@ public class ReservationService {
                 }
             }
 
+            // PENDING_RETURN 상태로 전환 시 중복 예약 체크 (비관적 락)
+            case PENDING_PAYMENT -> {
+                // Post 엔티티를 락을 걸고 조회
+                Post post = postService.getByIdWithLock(reservation.getPost().getId());
+
+                boolean hasConflicts = reservationQueryRepository.existsOverlappingReservation(
+                        reservation.getPost().getId(),
+                        reservation.getReservationStartAt(),
+                        reservation.getReservationEndAt(),
+                        reservation.getId()
+                );
+
+                if (hasConflicts) {
+                    throw new ServiceException(HttpStatus.CONFLICT,
+                            "해당 기간에 이미 승인된 예약이 있습니다.");
+                }
+
+                reservation.changeStatus(reqBody.status());
+            }
+
             // 단순 상태 전환 (명시적으로 나열)
-            case PENDING_PAYMENT,
-                 PENDING_PICKUP,
+            case PENDING_PICKUP,
                  INSPECTING_RENTAL,
                  RENTING,
                  RETURN_COMPLETED,
