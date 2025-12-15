@@ -49,8 +49,14 @@
 
 # 🧩 아키텍쳐
 - 아키텍처 이미지
+<img width="720" height="347" alt="image" src="https://github.com/user-attachments/assets/fa9ea756-b7c3-4f40-b0f0-812108882554" />
 
-설명에 Grafana, nginx proxy manager 활용 blue/green 무중단 배포, AWS Lambda 활용 이미지 리사이징 처리 등 설명이 들어가면 좋을 것 같음.
+
+- 주요 아키텍처 특징
+  - 실시간 모니터링: Grafana 대시보드를 통한 실시간 시스템 메트릭 모니터링 및 알림
+  - 무중단 배포: Nginx Proxy Manager를 활용한 Blue/Green 배포 전략으로 서비스 중단 없이 안전한 배포 구현
+  - 이미지 최적화: AWS Lambda를 통한 서버리스 이미지 리사이징으로 메인 서버 부하 분산 및 비용 효율화
+  - 분산 캐싱: Redis를 활용한 세션 관리 및 캐싱으로 서버 간 데이터 일관성 유지
 
 <br>
 
