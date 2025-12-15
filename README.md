@@ -483,6 +483,8 @@ public record NotificationResBody<T extends NotificationData>(
 
 <br>
 
+---
+
 ### 새로운 알림 타입 추가
 
 새로운 알림 타입이 추가되더라도 **기존 조회 로직이나 서비스 계층 코드는 수정하지 않습니다.**  
