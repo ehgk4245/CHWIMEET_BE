@@ -271,7 +271,7 @@ jobs:
       - name: Get Instance ID
         id: get_instance_id
         env:
-          EC2_INSTANCE_TAG_NAME: team1-backend
+          EC2_INSTANCE_TAG_NAME: chwimeet-backend
         run: |
           set -e
           
