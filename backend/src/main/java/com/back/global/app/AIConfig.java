@@ -21,7 +21,7 @@ public class AIConfig {
 	@Bean
 	public ChatClient gpt51ChatClient(OpenAiApi openAiApi) {
 		OpenAiChatOptions options = OpenAiChatOptions.builder()
-			.model("gpt-5.1")
+			.model("gpt-5-mini")
 			.temperature(1.0)
 			.build();
 
