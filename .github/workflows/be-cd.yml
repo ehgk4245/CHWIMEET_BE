@@ -202,7 +202,6 @@ jobs:
           aws ssm wait command-executed \
             --command-id "${{ env.COMMAND_ID }}" \
             --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
-            --timeout-seconds 600
 
           # 4. 최종 결과 확인
           STATUS=$(aws ssm get-command-invocation \
