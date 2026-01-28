@@ -13,11 +13,10 @@ permissions:
 
 concurrency:
   group: be-cd-${{ github.ref }}
-  cancel-in-progress: false # 배포는 취소하지 않음
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
-  # ✨ [수정] IMAGE_NAME 정의를 제거했습니다. JOB 내부에서 동적으로 설정됩니다.
 
 defaults:
   run:
@@ -29,20 +28,20 @@ jobs:
     timeout-minutes: 20
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
+      image-name: ${{ env.IMAGE_NAME }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ✨ [수정] 이 단계에서 OWNER_LC를 설정하고, IMAGE_NAME을 즉시 설정합니다.
+      # ✅ [소문자 변환] GHCR은 대문자를 허용하지 않으므로 변환 처리
       - name: Set owner name and image name
         run: |
-          # 1. OWNER_LC 설정 (소문자화)
           OWNER_LC=${{ github.repository_owner }}
-          OWNER_LC=${OWNER_LC,,} 
+          OWNER_LC=${OWNER_LC,,}
           echo "OWNER_LC=$OWNER_LC" >> $GITHUB_ENV
-
-          # 2. IMAGE_NAME 설정 (GHCR 규칙에 맞게 소문자 소유자 이름 사용)
+          
+          # 이미지 이름 설정
           IMAGE_NAME="$OWNER_LC/chwimeet-backend"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
@@ -51,13 +50,11 @@ jobs:
         with:
           driver: docker-container
 
-      # gradle wrapper 보안 검증
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v2
         with:
           gradle-wrapper-path: backend/gradle/wrapper/gradle-wrapper.jar
 
-      # Gradle 실행 JVM(JDK 24)
       - name: Setup Java (Gradle JVM = 24)
         uses: actions/setup-java@v4
         with:
@@ -66,7 +63,6 @@ jobs:
           cache: gradle
           cache-dependency-path: backend/build.gradle.kts
 
-      # 코드 toolchain용 JDK 25 미리 설치
       - name: Provision Java 25 for toolchain
         uses: actions/setup-java@v4
         with:
@@ -81,149 +77,60 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
 
-      # ========================================
-      # 🚀 CD 독립 실행: main branch 전용 (캐시 없음)
-      # - main 브랜치의 SQL만 사용하여 프로덕션 안전성 보장
-      # - CI와 완전히 분리: PR 캐시 영향 차단
-      # - 매번 JOOQ 새로 생성으로 CI 의존성 제거
-      # ========================================
-
-      # ========================================
-      # JOOQ 생성 (매번 실행)
-      # - GitHub Actions Runner의 임시 MariaDB 사용
-      # - main 브랜치의 SQL로만 생성 (프로덕션 DB와 무관)
-      # ========================================
+      # === JOOQ 생성용 임시 DB 시작 ===
       - name: Start MariaDB
         env:
           SPRING__DATASOURCE__PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           echo "🚀 Starting MariaDB..."
-          echo "=== Environment check ==="
-          echo "DB_PASSWORD is set: ${{ secrets.DB_PASSWORD != '' }}"
-          
           docker compose up -d mariadb
-          echo "⏳ Waiting for MariaDB to be ready..."
           sleep 10
-          
-          echo "=== Container status ==="
-          docker ps -a | grep mariadb || echo "No mariadb container found"
-          
-          echo "=== Recent logs ==="
-          docker compose logs --tail=20 mariadb || echo "No logs available"
-
-      - name: Verify MariaDB container is running
-        run: |
-          if ! docker ps | grep -q chwimeet-mariadb; then
-            echo "❌ MariaDB container is not running!"
-            echo "=== Docker compose logs ==="
-            docker compose logs mariadb
-            exit 1
-          fi
-          echo "✅ MariaDB container is running"
 
       - name: Wait for MariaDB
         env:
           SPRING__DATASOURCE__PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          echo "⏳ Waiting for MariaDB to accept connections..."
-          
           MAX_TRIES=30
           COUNTER=0
-          
           until docker exec chwimeet-mariadb mariadb-admin ping -h localhost -uroot -p${{ secrets.DB_PASSWORD }} --silent 2>/dev/null; do
             COUNTER=$((COUNTER + 1))
-          
-            if [ $COUNTER -ge $MAX_TRIES ]; then
-              echo "❌ MariaDB failed to start after ${MAX_TRIES} attempts (60 seconds)"
-              echo "=== MariaDB logs ==="
-              docker compose logs mariadb
-              echo "=== Container status ==="
-              docker ps -a | grep mariadb
-              exit 1
-            fi
-          
-            echo "Waiting for MariaDB... (attempt ${COUNTER}/${MAX_TRIES})"
+            if [ $COUNTER -ge $MAX_TRIES ]; then exit 1; fi
             sleep 2
           done
-          
           echo "✅ MariaDB is ready!"
 
-      - name: Generate JOOQ sources (always)
+      - name: Generate JOOQ sources
         env:
           SPRING__DATASOURCE__USERNAME: root
           SPRING__DATASOURCE__PASSWORD: ${{ secrets.DB_PASSWORD }}
           SPRING__DATASOURCE__URL: jdbc:mariadb://localhost:3306/chwimeet
-        run: |
-          echo "=== Starting JOOQ Generation (main branch) ==="
-          echo "📌 이것은 빌드용 임시 DB이며 프로덕션 DB와 무관합니다"
-          echo "📌 CD는 캐시를 사용하지 않고 매번 새로 생성합니다"
-          echo "   이유: PR 캐시 오염 방지, 프로덕션 안전성 최우선"
-          echo ""
-          echo "Checking environment variables (masked):"
-          echo "SPRING__DATASOURCE__USERNAME=$SPRING__DATASOURCE__USERNAME"
-          echo "SPRING__DATASOURCE__URL=$SPRING__DATASOURCE__URL"
-          echo ""
-          echo "⚙️  JOOQ 플러그인이 자동으로 Flyway 마이그레이션 실행"
-          
-          ./gradlew generateJooqClasses --no-daemon --stacktrace
-          
-          if [ -d "src/generated/com/back/jooq/tables" ]; then
-            echo "✅ JOOQ generated successfully"
-            ls -la src/generated/com/back/jooq/tables/
-          else
-            echo "❌ JOOQ generation failed"
-            exit 1
-          fi
-          
-          echo ""
-          echo "=== Verifying tables in database ==="
-          docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -e "USE chwimeet; SHOW TABLES;"
+        run: ./gradlew generateJooqClasses --no-daemon
 
       - name: Stop MariaDB
         if: always()
         run: docker compose down -v
+      # === JOOQ 생성 종료 ===
 
-      - name: Verify JOOQ sources exist
-        run: |
-          if [ ! -d "src/generated/com/back/jooq/tables" ]; then
-            echo "❌ JOOQ sources not found!"
-            exit 1
-          fi
-          echo "✅ JOOQ sources verified"
-          ls -la src/generated/com/back/jooq/tables/
-
-      # ========================================
-      # 🚀 빌드 (테스트 제외)
-      # ========================================
       - name: Build with Gradle
         run: ./gradlew clean bootJar -x test --no-daemon
 
-      # Docker 메타데이터 추출
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # ✨ 수정: env.IMAGE_NAME이 Step에서 설정되었으므로 이제 접근 가능
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
 
-      # GHCR 로그인
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      # Docker 이미지 빌드 및 Push
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -231,33 +138,24 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # cache-from과 cache-to는 그대로 유지
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
-
-      - name: Image digest
-        run: echo "🐳 Pushed image - ${{ steps.meta.outputs.tags }}"
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # 🔥 여기서 build-and-push의 backend 디렉토리 기본값을 덮어씀
+    # 루트 디렉토리에서 실행 (backend 아님)
     defaults:
       run:
-        working-directory: .   # 루트에서 실행
+        working-directory: .
 
     environment:
       name: production
       url: https://${{ vars.APP_DOMAIN }}
 
     steps:
-      # (선택) 코드가 필요 없으면 checkout은 생략해도 됨
-      # - name: Checkout
-      #   uses: actions/checkout@v4
-
-      # 1. AWS 자격 구성
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -265,140 +163,62 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # 2. Name 태그로 EC2 인스턴스 조회
-      - name: Get Instance ID
-        id: get_instance_id
+      - name: Deploy to EC2 via SSM
         env:
-          EC2_INSTANCE_TAG_NAME: team1-backend
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          GH_TOKEN: ${{ secrets.GHCR_TOKEN }} # docker login을 위한 토큰
+          GH_OWNER: ${{ github.repository_owner }}
         run: |
-          set -e
+          echo "🚀 Sending deployment command to EC2..."
           
-          echo "🔍 Finding EC2 instance with tag Name=${EC2_INSTANCE_TAG_NAME}"
+          # 1. 소문자 변환 (ID 대소문자 이슈 방지)
+          OWNER_LC=${GH_OWNER,,}
           
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=${EC2_INSTANCE_TAG_NAME}" \
-                      "Name=instance-state-name,Values=running" \
-            --query "Reservations[].Instances[].InstanceId" \
-            --output text)
-          
-          # ✅ 여기서 안전하게 검증 (괄호/복잡한 문법 없이)
-          if [ -z "${INSTANCE_ID}" ] || [ "${INSTANCE_ID}" = "None" ]; then
-            echo "❌ No running instance found"
-            exit 1
-          fi
-          
-          echo "✅ Found instance: ${INSTANCE_ID}"
-          echo "INSTANCE_ID=${INSTANCE_ID}" >> "${GITHUB_ENV}"
-
-      - name: Blue-Green Deployment
-        id: deploy
-        run: |
-          set -e
-
-          echo "=========================================="
-          echo "🚀 Starting Blue-Green Deployment"
-          echo "=========================================="
-
-          if [ -z "${{ env.INSTANCE_ID }}" ]; then
-            echo "❌ INSTANCE_ID is empty!"
-            exit 1
-          fi
-
-          echo "Target instance: ${{ env.INSTANCE_ID }}"
-
-          # SSM을 통해 배포 스크립트 실행 (ec2-user로)
+          # 2. SSM 명령 전송 (가장 중요한 부분!)
+          # - 환경변수(export)로 토큰을 EC2 세션에 주입
+          # - 그 후 deploy.sh 실행 (스크립트가 이 토큰을 받아서 docker login 수행)
           COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "${{ env.INSTANCE_ID }}" \
+            --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --comment "Blue-Green deployment as ec2-user" \
-            --timeout-seconds 600 \
-            --parameters 'commands=["set -e","sudo -u ec2-user bash -c \"cd /home/ec2-user/app && bash /home/ec2-user/app/deploy.sh\""]' \
-            --query 'Command.CommandId' \
+            --comment "Deploying Chwimeet Backend" \
+            --parameters "commands=[
+              'export GITHUB_ACCESS_TOKEN_1=$GH_TOKEN',
+              'export GITHUB_ACCESS_TOKEN_1_OWNER=$OWNER_LC',
+              'sudo -u ec2-user bash -c \"cd /home/ec2-user/app && ./deploy.sh\"'
+            ]" \
+            --query "Command.CommandId" \
             --output text)
+          
+          echo "✅ Command sent! ID: $COMMAND_ID"
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
 
-          echo "📤 Command ID: ${COMMAND_ID}"
-          echo "COMMAND_ID=${COMMAND_ID}" >> "${GITHUB_ENV}"
-
+      - name: Wait for Deployment Result
+        run: |
           echo "⏳ Waiting for deployment to complete..."
+          
+          # 3. 배포 완료 대기 (최대 10분)
+          aws ssm wait command-executed \
+            --command-id "${{ env.COMMAND_ID }}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --timeout-seconds 600
 
-          MAX_WAIT=600
-          ELAPSED=0
-
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-            STATUS=$(aws ssm get-command-invocation \
-              --command-id "${COMMAND_ID}" \
-              --instance-id "${{ env.INSTANCE_ID }}" \
-              --query 'Status' \
-              --output text 2>/dev/null || echo "Pending")
-
-            echo "Status: ${STATUS} (${ELAPSED}s elapsed)"
-
-            if [ "${STATUS}" = "Success" ]; then
-              echo "✅ Deployment completed successfully!"
-              break
-            elif [ "${STATUS}" = "Failed" ] || [ "${STATUS}" = "Cancelled" ] || [ "${STATUS}" = "TimedOut" ]; then
-              echo "❌ Deployment failed with status: ${STATUS}"
-              exit 1
-            fi
-
-            sleep 10
-            ELAPSED=$((ELAPSED + 10))
-          done
-
-          if [ $ELAPSED -ge $MAX_WAIT ]; then
-            echo "❌ Deployment timed out"
+          # 4. 최종 결과 확인
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "${{ env.COMMAND_ID }}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "Status" --output text)
+          
+          if [ "$STATUS" != "Success" ]; then
+            echo "❌ Deployment Failed!"
+            aws ssm get-command-invocation \
+              --command-id "${{ env.COMMAND_ID }}" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "StandardErrorContent" --output text
             exit 1
+          else
+            echo "🎉 Deployment Success!"
+            aws ssm get-command-invocation \
+              --command-id "${{ env.COMMAND_ID }}" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "StandardOutputContent" --output text
           fi
-
-      - name: Get Deployment Logs
-        if: always()
-        run: |
-          echo "=========================================="
-          echo "📋 Deployment Logs"
-          echo "=========================================="
-          
-          aws ssm get-command-invocation \
-            --command-id "${{ env.COMMAND_ID }}" \
-            --instance-id "${{ env.INSTANCE_ID }}" \
-            --query 'StandardOutputContent' \
-            --output text || echo "No output available"
-          
-          ERROR_OUTPUT=$(aws ssm get-command-invocation \
-            --command-id "${{ env.COMMAND_ID }}" \
-            --instance-id "${{ env.INSTANCE_ID }}" \
-            --query 'StandardErrorContent' \
-            --output text 2>/dev/null || echo "")
-          
-          if [ ! -z "$ERROR_OUTPUT" ] && [ "$ERROR_OUTPUT" != "None" ]; then
-            echo "=========================================="
-            echo "⚠️  Error Output"
-            echo "=========================================="
-            echo "$ERROR_OUTPUT"
-          fi
-
-      - name: Deployment Summary
-        if: success()
-        run: |
-          echo "=========================================="
-          echo "🎉 Deployment Summary"
-          echo "=========================================="
-          echo "✅ Blue-Green deployment completed"
-          echo "📦 Image: ${{ needs.build-and-push.outputs.image-tag }}"
-          echo "🖥️  Instance: ${{ env.INSTANCE_ID }}"
-          echo "🌐 URL: https://${{ vars.APP_DOMAIN }}"
-          echo ""
-          echo "⚠️  Manual Steps Required:"
-          echo "1. Login to Nginx Proxy Manager"
-          echo "2. Update Forward Hostname/IP to new container"
-          echo "3. Verify service is working correctly"
-          echo "=========================================="
-
-      - name: Deployment Failed
-        if: failure()
-        run: |
-          echo "=========================================="
-          echo "❌ Deployment Failed"
-          echo "=========================================="
-          echo "Please check the deployment logs above"
-          echo "The old container is still running (safe state)"
-          echo "=========================================="
