@@ -186,7 +186,7 @@ jobs:
             --parameters "commands=[
               'export GITHUB_ACCESS_TOKEN_1=$GH_TOKEN',
               'export GITHUB_ACCESS_TOKEN_1_OWNER=$OWNER_LC',
-              'sudo -u ec2-user bash -c \"cd /home/ec2-user/app && ./deploy.sh\"'
+              'sudo -u ec2-user bash -c \"cd /home/ec2-user/app && chmod +x deploy.sh && ./deploy.sh\"'
             ]" \
             --query "Command.CommandId" \
             --output text)
