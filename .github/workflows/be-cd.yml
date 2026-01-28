@@ -168,24 +168,14 @@ jobs:
       - name: Deploy to EC2 via SSM
         env:
           INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }} # docker login을 위한 토큰
-          GH_OWNER: ${{ github.repository_owner }}
         run: |
           echo "🚀 Sending deployment command to EC2..."
           
-          # 1. 소문자 변환 (ID 대소문자 이슈 방지)
-          OWNER_LC=${GH_OWNER,,}
-          
-          # 2. SSM 명령 전송 (가장 중요한 부분!)
-          # - 환경변수(export)로 토큰을 EC2 세션에 주입
-          # - 그 후 deploy.sh 실행 (스크립트가 이 토큰을 받아서 docker login 수행)
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploying Chwimeet Backend" \
             --parameters "commands=[
-              'export GITHUB_ACCESS_TOKEN_1=$GH_TOKEN',
-              'export GITHUB_ACCESS_TOKEN_1_OWNER=$OWNER_LC',
               'sudo -u ec2-user bash -c \"cd /home/ec2-user/app && chmod +x deploy.sh && ./deploy.sh\"'
             ]" \
             --query "Command.CommandId" \
