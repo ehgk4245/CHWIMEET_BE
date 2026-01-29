@@ -14,7 +14,7 @@
 > 사용되지 않던 장비가  
 > 취밋에서 만나 새로운 즐거움을 만들어갑니다.
 
-[🖥️ 서비스 바로가기](https://www.chwimeet.store/) ·
+[🖥️ 서비스 바로가기](https://www.chwimeet.site/) ·
 [🛠️ API 문서 (Swagger)](https://api.chwimeet.store/)
 
 </div>
