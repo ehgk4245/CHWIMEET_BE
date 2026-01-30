@@ -50,16 +50,22 @@ public class PostContentGenerateService {
                 .replace("{categoriesJson}", categoriesJson)
                 .replace("{additionalInfo}", additionalInfo == null ? "" : additionalInfo);
 
-        GenPostDetailResBody resBody = chatClient.prompt()
-                .system(systemPrompt)
-                .user(user -> {
-                    user.text(userPrompt);
-                    for (Resource image : optimizedImages) {
-                        user.media(MediaType.IMAGE_JPEG, image);
-                    }
-                })
-                .call()
-                .entity(GenPostDetailResBody.class);
+//        GenPostDetailResBody resBody = chatClient.prompt()
+//                .system(systemPrompt)
+//                .user(user -> {
+//                    user.text(userPrompt);
+//                    for (Resource image : optimizedImages) {
+//                        user.media(MediaType.IMAGE_JPEG, image);
+//                    }
+//                })
+//                .call()
+//                .entity(GenPostDetailResBody.class);
+        try {
+            Thread.sleep(20000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        GenPostDetailResBody resBody = new GenPostDetailResBody(null, null, null, null, null, null);
 
         return resBody;
     }
